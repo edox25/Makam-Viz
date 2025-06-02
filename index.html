@@ -1,0 +1,2707 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Makam Cloud Particle Visualizer</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(135deg, #1a0a00 0%, #3d1a00 50%, #5c2e00 100%);
+            overflow: hidden;
+            font-family: 'Arial', sans-serif;
+        }
+
+        #container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        #canvas-container {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+
+        #canvas-2d {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: none; /* Hidden by default, shown only for Ussak */
+        }
+
+        #rast-mandala-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            display: none;
+        }
+
+        #controls {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            z-index: 100;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 20px;
+            border-radius: 10px;
+            color: white;
+            max-width: 300px;
+        }
+
+        #makam-selector {
+            margin-bottom: 15px;
+        }
+
+        #makam-selector label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: bold;
+        }
+
+        #makam-select {
+            width: 100%;
+            padding: 8px;
+            border-radius: 5px;
+            border: none;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            margin-bottom: 10px;
+        }
+
+        #makam-select option {
+            background: #333;
+            color: white;
+        }
+
+        #play-button {
+            background: linear-gradient(45deg, #dc143c, #b22222);
+            border: none;
+            padding: 15px 30px;
+            border-radius: 25px;
+            color: white;
+            font-size: 16px;
+            cursor: pointer;
+            margin-bottom: 15px;
+            transition: transform 0.3s ease;
+            width: 100%;
+        }
+
+        #play-button:hover {
+            transform: scale(1.05);
+        }
+
+        #info {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            z-index: 100;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 15px;
+            border-radius: 10px;
+            color: white;
+            font-size: 12px;
+        }
+
+        .feature-indicator {
+            margin: 5px 0;
+            padding: 5px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 5px;
+        }
+
+        .feature-value {
+            display: inline-block;
+            width: 100px;
+            height: 10px;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 5px;
+            margin-left: 10px;
+            position: relative;
+        }
+
+        .feature-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #dc143c, #ff0000);
+            border-radius: 5px;
+            transition: width 0.1s ease;
+        }
+
+        #loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-size: 18px;
+            z-index: 200;
+        }
+
+        #makam-description {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            z-index: 100;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 20px;
+            border-radius: 10px;
+            color: white;
+            max-width: 350px;
+            font-size: 14px;
+        }
+
+        #makam-description h3 {
+            margin: 0 0 10px 0;
+            color: #dc143c;
+        }
+
+        #makam-description .therapeutic-effects {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid rgba(220, 20, 60, 0.3);
+        }
+
+        #makam-description .therapeutic-effects h4 {
+            margin: 0 0 8px 0;
+            color: #ff0000;
+            font-size: 13px;
+        }
+        
+        /* Rast Healing Pulse System Styles */
+        .rast-orb {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: #ff3333;
+            transition: transform 0.1s ease-out;
+            box-shadow: 0 0 20px rgba(255, 51, 51, 0.5);
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            display: none;
+        }
+        
+        .rast-wave-particle {
+            position: absolute;
+            width: 16px;
+            height: 16px;
+            background: radial-gradient(circle, #ff6b6b 0%, #ff3333 50%, transparent 100%);
+            border-radius: 50%;
+            pointer-events: none;
+            opacity: 0;
+            animation: rast-radiate 1.5s ease-out forwards;
+            left: 50%;
+            top: 50%;
+        }
+        
+        @keyframes rast-radiate {
+            0% {
+                transform: translate(-50%, -50%) scale(0.5);
+                opacity: 1;
+            }
+            100% {
+                transform: translate(-50%, -50%) scale(25);
+                opacity: 0;
+            }
+        }
+        
+        .rast-ember {
+            position: absolute;
+            width: 40px;
+            height: 35px;
+            clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+            background: radial-gradient(circle, #ff6b6b 0%, #ff3333 50%, #ff1111 100%);
+            pointer-events: none;
+            opacity: 0;
+            transform-style: preserve-3d;
+            box-shadow: 0 0 15px rgba(255, 70, 40, 0.7);
+            animation: rast-fall 4s ease-in-out forwards, rast-flicker 0.3s ease-in-out infinite alternate, rast-ripple 1.5s ease-in-out infinite;
+            filter: blur(var(--blur));
+        }
+        
+        @keyframes rast-fall {
+            0% {
+                transform: translateY(0) translateX(0) rotateZ(0deg) scale(1);
+                opacity: 0.2;
+            }
+            50% {
+                opacity: 0.8;
+            }
+            100% {
+                transform: translateY(100vh) translateX(calc(50px + var(--drift-x))) rotateZ(var(--rotation)) scale(var(--scale));
+                opacity: 0;
+            }
+        }
+        
+        @keyframes rast-flicker {
+            0% {
+                opacity: var(--base-opacity);
+                filter: brightness(0.8);
+            }
+            50% {
+                opacity: calc(var(--base-opacity) * 0.7);
+                filter: brightness(1.2);
+            }
+            100% {
+                opacity: var(--base-opacity);
+                filter: brightness(1);
+            }
+        }
+        
+        @keyframes rast-ripple {
+            0% {
+                clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+            }
+            25% {
+                clip-path: polygon(50% 2%, 97% 27%, 97% 73%, 50% 98%, 3% 73%, 3% 27%);
+            }
+            50% {
+                clip-path: polygon(50% 5%, 95% 30%, 95% 70%, 50% 95%, 5% 70%, 5% 30%);
+            }
+            75% {
+                clip-path: polygon(50% 2%, 97% 27%, 97% 73%, 50% 98%, 3% 73%, 3% 27%);
+            }
+            100% {
+                clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+            }
+        }
+        
+        #rast-mandala-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div id="container">
+        <div id="canvas-container"></div>
+        
+        <!-- 2D Canvas for Ussak painting effect -->
+        <canvas id="canvas-2d"></canvas>
+        
+        <!-- Rast Healing Pulse System -->
+        <canvas id="rast-mandala-canvas"></canvas>
+        <div class="rast-orb"></div>
+        
+        <div id="loading">Loading visualizer...</div>
+        
+        <div id="controls">
+            <div id="makam-selector">
+                <label for="makam-select">Select Makam:</label>
+                <select id="makam-select">
+                    <!-- Makam options will be populated dynamically -->
+                </select>
+            </div>
+            <button id="play-button">Play Visualization</button>
+            <div>
+                <strong>Makam Visualizer</strong><br>
+            </div>
+        </div>
+
+        <div id="info">
+            <div class="feature-indicator">
+                RMS (Sphere Size): 
+                <div class="feature-value">
+                    <div class="feature-bar" id="rms-bar" style="width: 0%"></div>
+                </div>
+            </div>
+            <div class="feature-indicator">
+                Spectral Centroid (Fire Intensity): 
+                <div class="feature-value">
+                    <div class="feature-bar" id="centroid-bar" style="width: 0%"></div>
+                </div>
+            </div>
+            <div class="feature-indicator">
+                Onsets (Spawn Events): <span id="onset-indicator">●</span>
+            </div>
+            <div style="margin-top: 10px;">
+                Time: <span id="time-display">0:00</span> / <span id="duration-display">0:00</span>
+            </div>
+            <div style="margin-top: 10px; font-size: 10px;">
+                Status: <span id="status">Initializing...</span>
+            </div>
+        </div>
+
+        <div id="makam-description">
+            <!-- Makam description will be dynamically populated -->
+        </div>
+    </div>
+
+    <!-- Audio element -->
+    <audio id="audio" preload="auto">
+        <source src="makams/Rast Makam.mp3" type="audio/mpeg">
+    </audio>
+
+    <!-- Three.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <!-- Anime.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.1/anime.min.js"></script>
+
+    <script>
+        class MakamVisualizer {
+            constructor() {
+                console.log(' Initializing Makam Visualizer...');
+                this.scene = null;
+                this.camera = null;
+                this.renderer = null;
+                this.particles = null;
+                this.audioFeatures = null;
+                this.audio = document.getElementById('audio');
+                this.isPlaying = false;
+                this.startTime = 0;
+                this.currentFeatureIndex = 0;
+                this.featuresLoaded = false;
+                this.lastOnsetTime = 0;
+                this.particlePool = [];
+                this.activeParticles = [];
+                this.currentMakam = 'rast';
+                
+                // Audio feature smoothing
+                this.smoothedRMS = 0;
+                this.smoothedCentroid = 0;
+                this.rmsHistory = [];
+                this.centroidHistory = [];
+                this.smoothingWindowSize = 5;
+                
+                // Makam presets
+                this.makamPresets = {
+                    rast: {
+                        name: "Rast",
+                        audioFile: "makams/Rast Makam.mp3",
+                        description: "The makam of confidence, composure, and joy. Traditionally played at pre-dawn and midnight.",
+                        therapeuticEffects: "Promotes contentment, peace, and cheerfulness. Used for paralysis relief and building inner strength.",
+                        timeOfDay: "Pre-dawn & Midnight",
+                        colors: {
+                            base: [1.0, 0.8, 0.2], // Warm sunrise gold
+                            accent: [0.15, 0.1, 0.5], // Deep midnight indigo
+                            highlight: [1.0, 1.0, 1.0] // White rim-glow
+                        },
+                        geometry: "sun_mandala",
+                        motionStyle: "breathing_rings",
+                        scaleMultiplier: 1.4,
+                        particleCount: 300,
+                        ringCount: 8,
+                        flareCount: 50
+                    },
+                    ussak: {
+                        name: "Ussak", 
+                        audioFile: "makams/ussak.mp3",
+                        description: "The makam of laughter and soothing drowsiness. Most effective at sunset for inducing peaceful sleep.",
+                        therapeuticEffects: "Induces laughter, eases anxiety, and promotes restful sleep in children and adults alike.",
+                        timeOfDay: "Sunset",
+                        colors: {
+                            base: [1.0, 0.85, 0.7], // Pastel peach
+                            accent: [0.8, 0.7, 0.9], // Lavender
+                            highlight: [0.4, 0.6, 0.9] // Twilight blue
+                        },
+                        geometry: "kiting_stars",
+                        motionStyle: "drifting_stars",
+                        scaleMultiplier: 0.8,
+                        particleCount: 150
+                    },
+                    neva: {
+                        name: "Neva",
+                        audioFile: "makams/neva.mp3", 
+                        description: "The makam of relief, freshness, and mental clarity. Clears negative thoughts and emotions.",
+                        therapeuticEffects: "Brings delight and freshness, removes negative thoughts and feelings, promotes mental clarity.",
+                        timeOfDay: "All day",
+                        colors: {
+                            base: [0.0, 0.8, 0.8], // Aqua-turquoise
+                            accent: [0.6, 1.0, 0.9], // Mint
+                            highlight: [1.0, 1.0, 1.0] // Bright white
+                        },
+                        geometry: "spiral_vortex",
+                        motionStyle: "outward_spiral",
+                        scaleMultiplier: 1.0,
+                        particleCount: 250
+                    },
+                    irak: {
+                        name: "Irak",
+                        audioFile: "makams/irak.mp3",
+                        description: "The makam for calming agitation and building courage. Effective against fear and restlessness.",
+                        therapeuticEffects: "Treats agitation, removes fear and aggression, effective for symptoms. Best used mid-morning.",
+                        timeOfDay: "Mid-morning",
+                        colors: {
+                            base: [0.7, 0.4, 0.2], // Deep terracotta
+                            accent: [0.3, 0.6, 0.6], // Cool teal  
+                            highlight: [0.9, 0.8, 0.5] // Warm earth tone
+                        },
+                        geometry: "crescents",
+                        motionStyle: "balanced_rotation",
+                        scaleMultiplier: 1.1,
+                        particleCount: 180
+                    }
+                };
+                
+                this.updateStatus('Initializing 3D scene...');
+                this.init();
+                this.setupMakamSelector();
+                this.loadCurrentMakam();
+                this.setupEventListeners();
+                
+                // 2D Canvas system for Ussak
+                this.canvas2D = document.getElementById('canvas-2d');
+                this.ctx2D = this.canvas2D.getContext('2d');
+                this.paintingBlobs = [];
+                this.triangleParticles = []; // For Irak spinning triangles
+                this.trailFrames = [];
+                this.maxTrailFrames = 12; // Number of trail frames to keep
+                
+                // Initialize 2D systems arrays
+                this.horizontalLines = [];
+                this.verticalLines = [];
+                
+                // Rast healing pulse system
+                this.rastCanvas = document.getElementById('rast-mandala-canvas');
+                this.rastCtx = this.rastCanvas.getContext('2d');
+                this.rastOrb = document.querySelector('.rast-orb');
+                this.lastRastWaveTime = 0;
+                this.rastWaveInterval = 100; // Minimum time between waves (ms)
+                
+                // Initialize the display for the current makam
+                this.initializeCurrentMakamDisplay();
+            }
+
+            updateStatus(message) {
+                document.getElementById('status').textContent = message;
+                console.log('Status:', message);
+            }
+
+            setupMakamSelector() {
+                const selector = document.getElementById('makam-select');
+                
+                // Populate makam options
+                Object.keys(this.makamPresets).forEach(key => {
+                    const option = document.createElement('option');
+                    option.value = key;
+                    option.textContent = this.makamPresets[key].name;
+                    if (key === this.currentMakam) option.selected = true;
+                    selector.appendChild(option);
+                });
+                
+                // Handle makam changes
+                selector.addEventListener('change', (e) => {
+                    this.switchMakam(e.target.value);
+                });
+                
+                // Update description display
+                this.updateMakamDescription();
+            }
+            
+            switchMakam(makamKey) {
+                if (this.isPlaying) {
+                    this.audio.pause();
+                    this.isPlaying = false;
+                    document.getElementById('play-button').textContent = 'Play Visualization';
+                }
+                
+                this.currentMakam = makamKey;
+                this.updateMakamDescription();
+                this.loadCurrentMakam();
+                
+                // Switch between 3D and 2D rendering based on makam
+                if (makamKey === 'ussak' || makamKey === 'irak' || makamKey === 'rast') {
+                    // Show 2D canvas, hide 3D for Ussak, Irak, and Rast
+                    this.canvas2D.style.display = 'block';
+                    document.getElementById('canvas-container').style.display = 'none';
+                    this.setup2DCanvas();
+                    
+                    // Show Rast system for Rast makam
+                    if (makamKey === 'rast') {
+                        this.rastCanvas.style.display = 'block';
+                        this.rastOrb.style.display = 'block';
+                        document.body.style.background = '#220000'; // Dark red background
+                    } else {
+                        this.rastCanvas.style.display = 'none';
+                        this.rastOrb.style.display = 'none';
+                        document.body.style.background = 'linear-gradient(135deg, #1a0a00 0%, #3d1a00 50%, #5c2e00 100%)'; // Original background
+                    }
+                } else {
+                    // Show 3D, hide 2D canvas for Neva
+                    this.canvas2D.style.display = 'none';
+                    this.rastCanvas.style.display = 'none';
+                    this.rastOrb.style.display = 'none';
+                    document.getElementById('canvas-container').style.display = 'block';
+                    document.body.style.background = 'linear-gradient(135deg, #1a0a00 0%, #3d1a00 50%, #5c2e00 100%)'; // Original background
+                    this.recreateParticleSystem();
+                }
+                
+                this.updateStatus(`Switched to ${this.makamPresets[makamKey].name} makam`);
+            }
+            
+            updateMakamDescription() {
+                const preset = this.makamPresets[this.currentMakam];
+                const descEl = document.getElementById('makam-description');
+                
+                descEl.innerHTML = `
+                    <h3>${preset.name} Makam</h3>
+                    <p>${preset.description}</p>
+                    <div class="therapeutic-effects">
+                        <h4>Therapeutic Effects:</h4>
+                        <p>${preset.therapeuticEffects}</p>
+                        <p><strong>Optimal Time:</strong> ${preset.timeOfDay}</p>
+                    </div>
+                `;
+            }
+            
+            loadCurrentMakam() {
+                const preset = this.makamPresets[this.currentMakam];
+                this.audio.src = preset.audioFile;
+                this.featuresLoaded = false;
+                
+                // Load corresponding audio features with correct naming
+                const featuresFile = `${this.currentMakam}_audio_features.json`;
+                console.log(`🎵 Loading audio features for ${preset.name}: ${featuresFile}`);
+                this.loadAudioFeatures(featuresFile);
+            }
+            
+            async loadAudioFeatures(filename = 'audio_features.json') {
+                this.updateStatus('Loading audio features...');
+                try {
+                    const response = await fetch(filename);
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    
+                    this.updateStatus('Parsing audio data...');
+                    this.audioFeatures = await response.json();
+                    this.featuresLoaded = true;
+                    
+                    const preset = this.makamPresets[this.currentMakam];
+                    console.log(`✅ ${preset.name} audio features loaded:`, {
+                        makam: this.currentMakam,
+                        duration: this.audioFeatures.duration,
+                        rmsFrames: this.audioFeatures.rms.values.length,
+                        centroidFrames: this.audioFeatures.spectral_centroid.values.length,
+                        onsets: this.audioFeatures.onsets.length,
+                        avgOnsetRate: (this.audioFeatures.onsets.length / this.audioFeatures.duration).toFixed(2) + ' onsets/second'
+                    });
+                    
+                    // Update duration display
+                    const minutes = Math.floor(this.audioFeatures.duration / 60);
+                    const seconds = Math.floor(this.audioFeatures.duration % 60);
+                    document.getElementById('duration-display').textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+                    
+                    // Update status with makam-specific info
+                    const onsetRate = (this.audioFeatures.onsets.length / this.audioFeatures.duration).toFixed(2);
+                    this.updateStatus(`${preset.name} ready! ${this.audioFeatures.onsets.length} onsets (${onsetRate}/sec)`);
+                } catch (error) {
+                    console.error('❌ Error loading audio features:', error);
+                    const preset = this.makamPresets[this.currentMakam];
+                    this.updateStatus(`Error loading ${preset.name} features - using demo mode`);
+                    // Continue without features for demo
+                }
+            }
+
+            recreateParticleSystem() {
+                // Remove existing particle system
+                if (this.particles) {
+                    this.scene.remove(this.particles);
+                    this.particles = null;
+                }
+                
+                // Create new system with current makam preset
+                this.createMakamParticleSystem();
+            }
+
+            createMakamParticleSystem() {
+                console.log(`🔥 Creating ${this.currentMakam} particle system...`);
+                
+                const preset = this.makamPresets[this.currentMakam];
+                const particleCount = preset.particleCount + (preset.flareCount || 0);
+                const geometry = new THREE.BufferGeometry();
+                const positions = new Float32Array(particleCount * 3);
+                const colors = new Float32Array(particleCount * 3);
+                const sizes = new Float32Array(particleCount);
+                const lifetimes = new Float32Array(particleCount);
+                const ages = new Float32Array(particleCount);
+                const particleTypes = new Float32Array(particleCount); // 0=ring, 1=flare
+
+                // Initialize particles based on makam geometry
+                for (let i = 0; i < particleCount; i++) {
+                    const i3 = i * 3;
+                    
+                    // Determine particle type for Rast and Ussak
+                    if (preset.geometry === 'sun_mandala') {
+                        particleTypes[i] = i < preset.particleCount ? 0.0 : 1.0; // First 300 are rings, last 50 are flares
+                        
+                        if (particleTypes[i] === 0.0) {
+                            // Ring particles - arranged in concentric circles
+                            this.initializeRingParticle(positions, i3, i, preset.particleCount, preset.ringCount);
+                        } else {
+                            // Flare particles - start at center, will be repositioned on spawn
+                            positions[i3] = 0;
+                            positions[i3 + 1] = 0;
+                            positions[i3 + 2] = 0;
+                        }
+                    } else if (preset.geometry === 'kiting_stars') {
+                        particleTypes[i] = i < preset.particleCount ? 0.0 : 1.0; // First 150 are stars, last 50 are flares
+                        
+                        if (particleTypes[i] === 0.0) {
+                            // Star particles - arranged in kiting pattern
+                            this.initializeStarParticle(positions, i3, i, preset.particleCount);
+                        } else {
+                            // Flare particles - start at center, will be repositioned on spawn
+                            positions[i3] = 0;
+                            positions[i3 + 1] = 0;
+                            positions[i3 + 2] = 0;
+                        }
+                    } else {
+                        particleTypes[i] = 0.0;
+                        this.initializeParticlePosition(positions, i3, preset.geometry, i, particleCount);
+                    }
+                    
+                    // Set makam-specific base colors
+                    colors[i3] = preset.colors.base[0];
+                    colors[i3 + 1] = preset.colors.base[1]; 
+                    colors[i3 + 2] = preset.colors.base[2];
+
+                    sizes[i] = 0; // Start invisible
+                    lifetimes[i] = particleTypes[i] === 1.0 ? 2.0 + Math.random() * 1.0 : 4.0 + Math.random() * 3.0; // Flares: 2-3s, Rings: 4-7s
+                    ages[i] = lifetimes[i]; // Start "dead"
+                }
+
+                geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+                geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+                geometry.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
+                geometry.setAttribute('lifetime', new THREE.BufferAttribute(lifetimes, 1));
+                geometry.setAttribute('age', new THREE.BufferAttribute(ages, 1));
+                geometry.setAttribute('particleType', new THREE.BufferAttribute(particleTypes, 1));
+
+                // Rast sun-mandala specific shader material
+                const material = new THREE.ShaderMaterial({
+                    uniforms: {
+                        time: { value: 0 },
+                        rmsValue: { value: 0 },
+                        centroidValue: { value: 0 },
+                        baseColor: { value: new THREE.Vector3(...preset.colors.base) },
+                        accentColor: { value: new THREE.Vector3(...preset.colors.accent) },
+                        highlightColor: { value: new THREE.Vector3(...preset.colors.highlight) },
+                        scaleMultiplier: { value: preset.scaleMultiplier },
+                        motionStyle: { value: this.getMotionStyleId(preset.motionStyle) },
+                        glowIntensity: { value: 1.0 }
+                    },
+                    vertexShader: `
+                        attribute float size;
+                        attribute vec3 color;
+                        attribute float lifetime;
+                        attribute float age;
+                        attribute float particleType;
+                        varying vec3 vColor;
+                        varying float vAlpha;
+                        varying float vLifeProgress;
+                        varying float vParticleType;
+                        uniform float time;
+                        uniform float rmsValue;
+                        uniform float centroidValue;
+                        uniform vec3 baseColor;
+                        uniform vec3 accentColor;
+                        uniform vec3 highlightColor;
+                        uniform float scaleMultiplier;
+                        uniform float motionStyle;
+                        
+                        void main() {
+                            float lifeProgress = age / lifetime;
+                            vLifeProgress = lifeProgress;
+                            vParticleType = particleType;
+                            
+                            if (particleType == 0.0) {
+                                // Ring particles - sunrise gold to midnight indigo based on audio
+                                float colorMix = rmsValue * 0.6 + centroidValue * 0.4;
+                                vColor = mix(baseColor, accentColor, colorMix);
+                                
+                                // Add white rim-glow for high spectral centroid
+                                if (centroidValue > 0.7) {
+                                    vColor = mix(vColor, highlightColor, (centroidValue - 0.7) / 0.3);
+                                }
+                            } else {
+                                // Flare particles - always bright gold/white
+                                vColor = mix(baseColor, highlightColor, 0.8);
+                            }
+                            
+                            // Override colors for Ussak makam
+                            if (motionStyle == 6.0) {
+                                if (particleType == 0.0) {
+                                    // Star particles - pastel peach-to-lavender-to-twilight blue
+                                    float colorMix = rmsValue * 0.5 + centroidValue * 0.5;
+                                    float heightMix = (position.y + 20.0) / 40.0; // Normalize Y position for color variation
+                                    
+                                    // Blend peach->lavender->twilight based on audio and height
+                                    vec3 peachToLavender = mix(baseColor, accentColor, colorMix);
+                                    vColor = mix(peachToLavender, highlightColor, heightMix * centroidValue);
+                                } else {
+                                    // Flare particles - lighter pastel versions, more transparent
+                                    float bubbleMix = centroidValue * 0.8;
+                                    vColor = mix(baseColor * 1.1, highlightColor, bubbleMix);
+                                }
+                            }
+                            
+                            // Gradual fade for smooth appearance
+                            float fadeInDuration = 0.1;
+                            float fadeOutDuration = 0.4;
+                            
+                            if (lifeProgress < fadeInDuration) {
+                                vAlpha = smoothstep(0.0, fadeInDuration, lifeProgress);
+                            } else if (lifeProgress > (1.0 - fadeOutDuration)) {
+                                float fadeOutProgress = (lifeProgress - (1.0 - fadeOutDuration)) / fadeOutDuration;
+                                vAlpha = 1.0 - smoothstep(0.0, 1.0, fadeOutProgress);
+                            } else {
+                                vAlpha = 1.0;
+                            }
+                            
+                            vec3 pos = position;
+                            
+                            if (particleType == 0.0 && motionStyle == 5.0) {
+                                // Breathing rings - RMS pulses enlarge all rings equally
+                                float breathingScale = 1.0 + sin(time * 1.2) * 0.1 + rmsValue * 0.4;
+                                pos.xy *= breathingScale;
+                            } else if (particleType == 1.0) {
+                                // Flare motion - arc outward then fall like shooting stars
+                                float flareTime = (1.0 - lifeProgress);
+                                float arcHeight = sin(flareTime * 3.14159) * 15.0;
+                                pos.y += arcHeight;
+                                pos.z += flareTime * flareTime * 20.0; // Falling motion
+                            }
+                            
+                            if (motionStyle == 6.0) {
+                                // Ussak: Gentle kiting star motion
+                                if (particleType == 0.0) {
+                                    // Star particles - gentle drift (motion mostly handled by updateParticles)
+                                    float gentleDrift = sin(time * 0.5 + pos.x * 0.05) * 0.8; 
+                                    pos.y += gentleDrift; // Slight vertical bobbing
+                                    pos.x += sin(time * 0.3 + pos.y * 0.02) * 0.5; // Gentle horizontal sway
+                                } else if (particleType == 1.0) {
+                                    // Flare particles - simple rising motion (handled by updateParticles)
+                                    // Small sparkle effect
+                                    float sparkle = sin(time * 8.0 + pos.x + pos.y) * 0.5;
+                                    pos.x += sparkle * 0.2;
+                                    pos.y += sparkle * 0.2;
+                                }
+                            }
+                            
+                            vAlpha *= (0.3 + rmsValue * 1.4);
+                            
+                            vec4 mvPosition = modelViewMatrix * vec4(pos, 1.0);
+                            
+                            float baseSizeMultiplier = scaleMultiplier * (1.0 + rmsValue * 1.5);
+                            if (particleType == 1.0) {
+                                baseSizeMultiplier *= 1.8; // Flares are bigger
+                            }
+                            float centroidSizeBoost = 1.0 + centroidValue * 0.6;
+                            gl_PointSize = size * baseSizeMultiplier * centroidSizeBoost * (150.0 / -mvPosition.z);
+                            gl_Position = projectionMatrix * mvPosition;
+                        }
+                    `,
+                    fragmentShader: `
+                        varying vec3 vColor;
+                        varying float vAlpha;
+                        varying float vLifeProgress;
+                        varying float vParticleType;
+                        uniform float glowIntensity;
+                        
+                        void main() {
+                            vec2 center = gl_PointCoord - vec2(0.5);
+                            float distance = length(center);
+                            
+                            if (distance > 0.5) discard;
+                            
+                            float alpha;
+                            if (vParticleType == 1.0) {
+                                // Flare particles - bright star-like appearance
+                                alpha = 1.0 - smoothstep(0.0, 0.5, distance);
+                                alpha *= alpha; // More concentrated brightness
+                            } else {
+                                // Ring particles - enhanced therapeutic glow with makam-specific intensity
+                                float coreAlpha = 1.0 - smoothstep(0.0, 0.2, distance);
+                                float glowAlpha = 1.0 - smoothstep(0.1, 0.5, distance);
+                                float rimAlpha = 1.0 - smoothstep(0.3, 0.5, distance);
+                                
+                                // Enhanced glow combination with intensity multiplier
+                                alpha = coreAlpha * 0.8 + glowAlpha * 0.6 * glowIntensity + rimAlpha * 0.4;
+                            }
+                            
+                            alpha *= vAlpha;
+                            
+                            vec3 finalColor = vColor;
+                            if (vParticleType == 1.0) {
+                                // Flares get extra brightness
+                                finalColor *= 1.6;
+                            } else {
+                                // Rings get glow-enhanced brightness
+                                finalColor *= (1.2 + glowIntensity * 0.4);
+                            }
+                            
+                            gl_FragColor = vec4(finalColor, alpha);
+                        }
+                    `,
+                    transparent: true,
+                    vertexColors: false,
+                    blending: THREE.AdditiveBlending
+                });
+
+                this.particles = new THREE.Points(geometry, material);
+                this.scene.add(this.particles);
+                
+                console.log(`✅ ${preset.name} particle system created with ${particleCount} particles`);
+            }
+            
+            initializeRingParticle(positions, i3, index, totalRingParticles, ringCount) {
+                // Create concentric rings for sun-mandala
+                const particlesPerRing = Math.floor(totalRingParticles / ringCount);
+                const ringIndex = Math.floor(index / particlesPerRing);
+                const particleInRing = index % particlesPerRing;
+                
+                const radius = 5 + ringIndex * 4; // Rings at 5, 9, 13, 17, 21, 25, 29, 33 units
+                const angle = (particleInRing / particlesPerRing) * Math.PI * 2;
+                
+                positions[i3] = radius * Math.cos(angle);
+                positions[i3 + 1] = radius * Math.sin(angle);
+                positions[i3 + 2] = (Math.random() - 0.5) * 4; // Slight depth variation
+            }
+            
+            initializeStarParticle(positions, i3, index, totalStarParticles) {
+                // Create kiting stars that start from off-screen edges
+                const side = Math.floor(Math.random() * 4); // 0=left, 1=right, 2=top, 3=bottom
+                
+                switch (side) {
+                    case 0: // Left side
+                        positions[i3] = -60 - Math.random() * 20; // Start left of screen
+                        positions[i3 + 1] = (Math.random() - 0.5) * 80; // Random Y
+                        break;
+                    case 1: // Right side  
+                        positions[i3] = 60 + Math.random() * 20; // Start right of screen
+                        positions[i3 + 1] = (Math.random() - 0.5) * 80; // Random Y
+                        break;
+                    case 2: // Top side
+                        positions[i3] = (Math.random() - 0.5) * 80; // Random X
+                        positions[i3 + 1] = 50 + Math.random() * 20; // Start above screen
+                        break;
+                    case 3: // Bottom side
+                        positions[i3] = (Math.random() - 0.5) * 80; // Random X
+                        positions[i3 + 1] = -50 - Math.random() * 20; // Start below screen
+                        break;
+                }
+                
+                positions[i3 + 2] = (Math.random() - 0.5) * 40; // Random depth
+                
+                // Store velocity for this star
+                this.starVelocities = this.starVelocities || {};
+                const speed = 3 + Math.random() * 4; // Random speed 3-7 units/sec
+                const angle = Math.random() * Math.PI * 2; // Random direction
+                this.starVelocities[index] = {
+                    vx: Math.cos(angle) * speed,
+                    vy: Math.sin(angle) * speed,
+                    vz: (Math.random() - 0.5) * 2 // Slight Z drift
+                };
+            }
+            
+            initializeParticlePosition(positions, i3, geometryType, index, total) {
+                switch (geometryType) {
+                    case 'mandala':
+                        // Circular mandala pattern
+                        const ring = Math.floor(index / 20);
+                        const angle = (index % 20) * Math.PI * 2 / 20;
+                        const radius = 5 + ring * 3;
+                        positions[i3] = radius * Math.cos(angle);
+                        positions[i3 + 1] = radius * Math.sin(angle);
+                        positions[i3 + 2] = (Math.random() - 0.5) * 20;
+                        break;
+                        
+                    case 'clouds':
+                        // Fluffy cloud clusters
+                        positions[i3] = (Math.random() - 0.5) * 40;
+                        positions[i3 + 1] = Math.random() * 20 - 10;
+                        positions[i3 + 2] = (Math.random() - 0.5) * 30;
+                        break;
+                        
+                    case 'spiral_vortex':
+                        // Outward spiral
+                        const spiralAngle = index * 0.5;
+                        const spiralRadius = index * 0.3;
+                        positions[i3] = spiralRadius * Math.cos(spiralAngle);
+                        positions[i3 + 1] = spiralRadius * Math.sin(spiralAngle);
+                        positions[i3 + 2] = (index - total/2) * 0.2;
+                        break;
+                        
+                    case 'crescents':
+                        // Two interlocking crescents
+                        const isLeftCrescent = index < total / 2;
+                        const crescentAngle = (index % (total/2)) * Math.PI / (total/2);
+                        const crescentRadius = 8 + Math.sin(crescentAngle) * 5;
+                        positions[i3] = crescentRadius * Math.cos(crescentAngle) * (isLeftCrescent ? -1 : 1);
+                        positions[i3 + 1] = crescentRadius * Math.sin(crescentAngle);
+                        positions[i3 + 2] = (Math.random() - 0.5) * 15;
+                        break;
+                        
+                    default:
+                        // Default tunnel
+                        const tunnelRadius = 15 + Math.random() * 20;
+                        const tunnelAngle = Math.random() * Math.PI * 2;
+                        positions[i3] = tunnelRadius * Math.cos(tunnelAngle);
+                        positions[i3 + 1] = tunnelRadius * Math.sin(tunnelAngle);
+                        positions[i3 + 2] = (Math.random() - 0.5) * 60;
+                }
+            }
+            
+            getMotionStyleId(motionStyle) {
+                switch (motionStyle) {
+                    case 'radial_breathing': return 1.0;
+                    case 'gentle_bobbing': return 2.0;
+                    case 'outward_spiral': return 3.0;
+                    case 'balanced_rotation': return 4.0;
+                    case 'breathing_rings': return 5.0;
+                    case 'drifting_stars': return 6.0;
+                    default: return 0.0;
+                }
+            }
+
+            init() {
+                try {
+                    console.log('🎬 Setting up Three.js scene...');
+                    
+                    // Scene setup
+                    this.scene = new THREE.Scene();
+                    this.camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+                    this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+                    this.renderer.setSize(window.innerWidth, window.innerHeight);
+                    this.renderer.setClearColor(0x000000, 1); // Black background
+                    
+                    const canvasContainer = document.getElementById('canvas-container');
+                    canvasContainer.appendChild(this.renderer.domElement);
+                    console.log('✅ Renderer added to DOM');
+
+                    // Camera position
+                    this.camera.position.z = 50;
+
+                    // Create makam-specific particle system
+                    this.createMakamParticleSystem();
+
+                    // Soft ambient lighting for therapeutic feel
+                    const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
+                    this.scene.add(ambientLight);
+
+                    const pointLight = new THREE.PointLight(0xffffff, 2, 100);
+                    pointLight.position.set(0, 0, 30);
+                    this.scene.add(pointLight);
+
+                    console.log('✅ Scene setup complete');
+                    
+                    // Hide loading message
+                    document.getElementById('loading').style.display = 'none';
+                    
+                    // Start render loop
+                    this.animate();
+                    this.updateStatus('3D scene ready');
+
+                    // Handle window resize
+                    window.addEventListener('resize', () => this.onWindowResize());
+                    
+                } catch (error) {
+                    console.error('❌ Error initializing Three.js:', error);
+                    this.updateStatus('Error initializing 3D graphics');
+                }
+            }
+
+            createFireParticleSystem() {
+                console.log('🔥 Creating fire particle system...');
+                
+                const particleCount = 300;
+                const geometry = new THREE.BufferGeometry();
+                const positions = new Float32Array(particleCount * 3);
+                const colors = new Float32Array(particleCount * 3);
+                const sizes = new Float32Array(particleCount);
+                const lifetimes = new Float32Array(particleCount);
+                const ages = new Float32Array(particleCount);
+
+                // Initialize particles
+                for (let i = 0; i < particleCount; i++) {
+                    const i3 = i * 3;
+                    
+                    // Start particles at origin, will be repositioned on spawn
+                    positions[i3] = 0;
+                    positions[i3 + 1] = 0;
+                    positions[i3 + 2] = 0;
+
+                    // Bright saturated base colors - no black/dark colors
+                    colors[i3] = 1.0;     // R
+                    colors[i3 + 1] = 0.5; // G
+                    colors[i3 + 2] = 0.2; // B
+
+                    sizes[i] = 0; // Start invisible
+                    lifetimes[i] = 4.0 + Math.random() * 3.0; // 4-7 second lifetime for better spacing
+                    ages[i] = lifetimes[i]; // Start "dead"
+                }
+
+                geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+                geometry.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+                geometry.setAttribute('size', new THREE.BufferAttribute(sizes, 1));
+                geometry.setAttribute('lifetime', new THREE.BufferAttribute(lifetimes, 1));
+                geometry.setAttribute('age', new THREE.BufferAttribute(ages, 1));
+
+                // Simple particle material with trailing effect
+                const material = new THREE.ShaderMaterial({
+                    uniforms: {
+                        time: { value: 0 },
+                        rmsValue: { value: 0 },
+                        centroidValue: { value: 0 }
+                    },
+                    vertexShader: `
+                        attribute float size;
+                        attribute vec3 color;
+                        attribute float lifetime;
+                        attribute float age;
+                        varying vec3 vColor;
+                        varying float vAlpha;
+                        varying float vLifeProgress;
+                        uniform float time;
+                        uniform float rmsValue;
+                        uniform float centroidValue;
+                        
+                        void main() {
+                            // Calculate life progress for gradual fade
+                            float lifeProgress = age / lifetime;
+                            vLifeProgress = lifeProgress;
+                            
+                            // Clear red-orange-yellow-white color progression
+                            // Based on smoothed audio features
+                            float colorIntensity = rmsValue * 0.7 + centroidValue * 0.3;
+                            
+                            if (colorIntensity < 0.25) {
+                                // Deep red for quiet/low passages
+                                vColor = vec3(1.0, 0.1, 0.0);
+                            } else if (colorIntensity < 0.5) {
+                                // Red to orange transition
+                                float t = (colorIntensity - 0.25) / 0.25;
+                                vColor = mix(vec3(1.0, 0.1, 0.0), vec3(1.0, 0.5, 0.0), t);
+                            } else if (colorIntensity < 0.75) {
+                                // Orange to yellow transition
+                                float t = (colorIntensity - 0.5) / 0.25;
+                                vColor = mix(vec3(1.0, 0.5, 0.0), vec3(1.0, 1.0, 0.0), t);
+                            } else {
+                                // Yellow to white for intense passages
+                                float t = (colorIntensity - 0.75) / 0.25;
+                                vColor = mix(vec3(1.0, 1.0, 0.0), vec3(1.0, 1.0, 1.0), t);
+                            }
+                            
+                            // Gradual fade in/out for smooth trails
+                            float fadeInDuration = 0.15;
+                            float fadeOutDuration = 0.4;
+                            
+                            if (lifeProgress < fadeInDuration) {
+                                // Smooth fade in
+                                vAlpha = smoothstep(0.0, fadeInDuration, lifeProgress);
+                            } else if (lifeProgress > (1.0 - fadeOutDuration)) {
+                                // Gradual fade out over longer period
+                                float fadeOutProgress = (lifeProgress - (1.0 - fadeOutDuration)) / fadeOutDuration;
+                                vAlpha = 1.0 - smoothstep(0.0, 1.0, fadeOutProgress);
+                            } else {
+                                vAlpha = 1.0;
+                            }
+                            
+                            // Visibility tied to musical activity
+                            vAlpha *= (0.3 + rmsValue * 1.2);
+                            
+                            vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
+                            
+                            // Smooth size scaling based on audio features
+                            float baseSizeMultiplier = 1.0 + rmsValue * 3.0;
+                            float centroidSizeBoost = 1.0 + centroidValue * 1.2;
+                            gl_PointSize = size * baseSizeMultiplier * centroidSizeBoost * (200.0 / -mvPosition.z);
+                            gl_Position = projectionMatrix * mvPosition;
+                        }
+                    `,
+                    fragmentShader: `
+                        varying vec3 vColor;
+                        varying float vAlpha;
+                        varying float vLifeProgress;
+                        
+                        void main() {
+                            // Simple circular particle
+                            vec2 center = gl_PointCoord - vec2(0.5);
+                            float distance = length(center);
+                            
+                            if (distance > 0.5) discard;
+                            
+                            // Enhanced glow effect with gradual falloff
+                            float coreAlpha = 1.0 - smoothstep(0.0, 0.3, distance);
+                            float glowAlpha = 1.0 - smoothstep(0.1, 0.5, distance);
+                            float rimAlpha = 1.0 - smoothstep(0.3, 0.5, distance);
+                            
+                            // Combine glow layers for smooth appearance
+                            float totalAlpha = coreAlpha * 0.8 + glowAlpha * 0.6 + rimAlpha * 0.4;
+                            totalAlpha *= vAlpha;
+                            
+                            // Enhanced color with smooth glow
+                            vec3 finalColor = vColor;
+                            finalColor *= (1.0 + coreAlpha * 0.8);
+                            finalColor += vColor * glowAlpha * 0.3;
+                            finalColor *= 1.4;
+                            
+                            gl_FragColor = vec4(finalColor, totalAlpha);
+                        }
+                    `,
+                    transparent: true,
+                    vertexColors: false,
+                    blending: THREE.AdditiveBlending
+                });
+
+                this.particles = new THREE.Points(geometry, material);
+                this.scene.add(this.particles);
+                
+                console.log('✅ Fire particle system created with', particleCount, 'particles');
+            }
+
+            smoothAudioFeatures(rmsValue, centroidValue) {
+                // Add current values to history
+                this.rmsHistory.push(rmsValue);
+                this.centroidHistory.push(centroidValue);
+                
+                // Keep only recent history for smoothing window
+                if (this.rmsHistory.length > this.smoothingWindowSize) {
+                    this.rmsHistory.shift();
+                }
+                if (this.centroidHistory.length > this.smoothingWindowSize) {
+                    this.centroidHistory.shift();
+                }
+                
+                // Calculate moving average to reduce jitter
+                this.smoothedRMS = this.rmsHistory.reduce((sum, val) => sum + val, 0) / this.rmsHistory.length;
+                this.smoothedCentroid = this.centroidHistory.reduce((sum, val) => sum + val, 0) / this.centroidHistory.length;
+                
+                return {
+                    rms: this.smoothedRMS,
+                    centroid: this.smoothedCentroid
+                };
+            }
+
+            spawnParticle(index, intensity = 1.0) {
+                const positions = this.particles.geometry.attributes.position.array;
+                const sizes = this.particles.geometry.attributes.size.array;
+                const ages = this.particles.geometry.attributes.age.array;
+                const lifetimes = this.particles.geometry.attributes.lifetime.array;
+                const particleTypes = this.particles.geometry.attributes.particleType?.array;
+                
+                const preset = this.makamPresets[this.currentMakam];
+                const i3 = index * 3;
+                
+                if (preset.geometry === 'sun_mandala' && particleTypes) {
+                    if (particleTypes[index] === 0.0) {
+                        // Ring particle - reinitialize in ring formation
+                        this.initializeRingParticle(positions, i3, index, preset.particleCount, preset.ringCount);
+                        sizes[index] = (3 + Math.random() * 2) * intensity * preset.scaleMultiplier;
+                        lifetimes[index] = 4.0 + Math.random() * 3.0; // Longer for rings
+                    } else {
+                        // Flare particle - spawn from center and set random outward direction
+                        const angle = Math.random() * Math.PI * 2;
+                        const speed = 8 + Math.random() * 6; // Outward velocity
+                        
+                        positions[i3] = 0; // Start at center
+                        positions[i3 + 1] = 0;
+                        positions[i3 + 2] = 0;
+                        
+                        // Store velocity in unused position data for motion calculation
+                        this.flareVelocities = this.flareVelocities || {};
+                        this.flareVelocities[index] = {
+                            vx: Math.cos(angle) * speed,
+                            vy: Math.sin(angle) * speed,
+                            vz: Math.random() * 4 - 2 // Slight z variation
+                        };
+                        
+                        sizes[index] = (4 + Math.random() * 3) * intensity * preset.scaleMultiplier * 1.5; // Bigger flares
+                        lifetimes[index] = 2.0 + Math.random() * 1.0; // Shorter for shooting stars
+                    }
+                } else if (preset.geometry === 'kiting_stars' && particleTypes) {
+                    if (particleTypes[index] === 0.0) {
+                        // Star particle - reinitialize in kiting pattern
+                        this.initializeStarParticle(positions, i3, index, preset.particleCount);
+                        sizes[index] = (2 + Math.random() * 2) * intensity * preset.scaleMultiplier;
+                        lifetimes[index] = 6.0 + Math.random() * 4.0; // Longer for peaceful drifting
+                    } else {
+                        // Flare particle - spawn at center and set for rising
+                        positions[i3] = 0; // Start at center
+                        positions[i3 + 1] = 0;
+                        positions[i3 + 2] = 0;
+                        
+                        sizes[index] = (1 + Math.random() * 1.5) * intensity * preset.scaleMultiplier; // Smaller flares
+                        lifetimes[index] = 3.0 + Math.random() * 2.0; // Shorter for rising and popping
+                    }
+                } else {
+                    // Other makam geometries
+                    this.initializeParticlePosition(positions, i3, preset.geometry, index, preset.particleCount);
+                    sizes[index] = (2 + Math.random() * 4) * intensity * preset.scaleMultiplier;
+                    lifetimes[index] = 3.0 + Math.random() * 4.0;
+                }
+                
+                ages[index] = 0;
+                
+                this.particles.geometry.attributes.position.needsUpdate = true;
+                this.particles.geometry.attributes.size.needsUpdate = true;
+                this.particles.geometry.attributes.age.needsUpdate = true;
+            }
+
+            updateParticles(deltaTime, smoothedFeatures, onsetDetected) {
+                if (!this.particles) return;
+                
+                const preset = this.makamPresets[this.currentMakam];
+                const ages = this.particles.geometry.attributes.age.array;
+                const lifetimes = this.particles.geometry.attributes.lifetime.array;
+                const positions = this.particles.geometry.attributes.position.array;
+                const particleTypes = this.particles.geometry.attributes.particleType?.array;
+                
+                let needsUpdate = false;
+                
+                // Update existing particles with makam-specific movement
+                for (let i = 0; i < ages.length; i++) {
+                    if (ages[i] < lifetimes[i]) {
+                        ages[i] += deltaTime;
+                        
+                        const i3 = i * 3;
+                        
+                        if (preset.geometry === 'sun_mandala' && particleTypes) {
+                            if (particleTypes[i] === 1.0) {
+                                // Flare particles - shooting star motion
+                                if (this.flareVelocities && this.flareVelocities[i]) {
+                                    const vel = this.flareVelocities[i];
+                                    positions[i3] += vel.vx * deltaTime;
+                                    positions[i3 + 1] += vel.vy * deltaTime;
+                                    positions[i3 + 2] += vel.vz * deltaTime;
+                                    
+                                    // Add gravity/falling effect
+                                    vel.vy -= 9.8 * deltaTime * 0.5; // Gentle gravity
+                                }
+                            }
+                            // Ring particles stay in their mandala positions (handled by shader breathing)
+                        } else {
+                            // Other makam movement patterns
+                            switch (preset.motionStyle) {
+                                case 'gentle_bobbing':
+                                    positions[i3 + 1] += Math.sin(Date.now() * 0.0008 + i * 0.05) * deltaTime * 0.5;
+                                    positions[i3 + 2] += deltaTime * 5;
+                                    break;
+                                    
+                                case 'drifting_stars':
+                                    if (particleTypes[i] === 0.0) {
+                                        // Star particles - use stored velocities for kiting motion
+                                        if (this.starVelocities && this.starVelocities[i]) {
+                                            const vel = this.starVelocities[i];
+                                            positions[i3] += vel.vx * deltaTime;
+                                            positions[i3 + 1] += vel.vy * deltaTime;
+                                            positions[i3 + 2] += vel.vz * deltaTime;
+                                        }
+                                        
+                                        // Check if star is off-screen and mark for respawn
+                                        const x = positions[i3];
+                                        const y = positions[i3 + 1];
+                                        if (x < -80 || x > 80 || y < -60 || y > 60) {
+                                            ages[i] = lifetimes[i]; // Mark as dead for respawn
+                                        }
+                                    } else if (particleTypes[i] === 1.0) {
+                                        // Flare particles - simple upward motion
+                                        positions[i3 + 1] += deltaTime * 15;
+                                        
+                                        // Check if flare is off-screen
+                                        if (positions[i3 + 1] > 60) {
+                                            ages[i] = lifetimes[i]; // Mark as dead
+                                        }
+                                    }
+                                    break;
+                                    
+                                case 'outward_spiral':
+                                    const angle = Math.atan2(positions[i3 + 1], positions[i3]) + deltaTime * 0.2;
+                                    const radius = Math.sqrt(positions[i3] * positions[i3] + positions[i3 + 1] * positions[i3 + 1]);
+                                    positions[i3] = radius * Math.cos(angle);
+                                    positions[i3 + 1] = radius * Math.sin(angle);
+                                    positions[i3 + 2] += deltaTime * 8;
+                                    break;
+                                    
+                                case 'balanced_rotation':
+                                    const rotAngle = Math.atan2(positions[i3 + 1], positions[i3]) + deltaTime * 0.3;
+                                    const rotRadius = Math.sqrt(positions[i3] * positions[i3] + positions[i3 + 1] * positions[i3 + 1]);
+                                    positions[i3] = rotRadius * Math.cos(rotAngle);
+                                    positions[i3 + 1] = rotRadius * Math.sin(rotAngle);
+                                    break;
+                                    
+                                default:
+                                    positions[i3 + 2] += deltaTime * 15;
+                            }
+                        }
+                        
+                        // Reset particles that move too far from center
+                        const distance = Math.sqrt(positions[i3] * positions[i3] + positions[i3 + 1] * positions[i3 + 1] + positions[i3 + 2] * positions[i3 + 2]);
+                        if (distance > 100) {
+                            ages[i] = lifetimes[i]; // Mark as dead for respawn
+                        }
+                        
+                        needsUpdate = true;
+                    }
+                }
+                
+                // ONSET-ONLY spawning system 
+                let spawnCount = 0;
+                
+                if (onsetDetected) {
+                    if (preset.geometry === 'sun_mandala') {
+                        // Spawn sun-flares on onsets for Rast
+                        spawnCount = 3 + Math.floor(smoothedFeatures.rms * 8); // 3-11 flares per onset
+                        console.log(`🌟 ${preset.name} onset! Spawning ${spawnCount} sun-flares`);
+                    } else if (preset.geometry === 'kiting_stars') {
+                        // Spawn flares on onsets for Ussak
+                        spawnCount = 2 + Math.floor(smoothedFeatures.rms * 4); // 2-6 flares per onset
+                        console.log(`🫧 ${preset.name} onset! Spawning ${spawnCount} rising flares`);
+                    } else {
+                        // Other makams
+                        spawnCount = 8 + Math.floor(smoothedFeatures.rms * 15);
+                        console.log(`🎵 ${preset.name} onset! Spawning ${spawnCount} particles`);
+                    }
+                }
+                
+                // Spawn new particles only from onset events
+                for (let i = 0; i < spawnCount; i++) {
+                    // For Rast, prioritize spawning flares on onsets
+                    if (preset.geometry === 'sun_mandala' && particleTypes) {
+                        // Find a dead flare particle first
+                        let spawnedFlare = false;
+                        for (let j = preset.particleCount; j < particleTypes.length; j++) {
+                            if (ages[j] >= lifetimes[j]) {
+                                const intensity = 1.5 + smoothedFeatures.rms * 1.0;
+                                this.spawnParticle(j, intensity);
+                                spawnedFlare = true;
+                                break;
+                            }
+                        }
+                        
+                        // If no flare slots available, spawn a ring particle
+                        if (!spawnedFlare) {
+                            for (let j = 0; j < preset.particleCount; j++) {
+                                if (ages[j] >= lifetimes[j]) {
+                                    const intensity = 1.2 + smoothedFeatures.rms * 0.8;
+                                    this.spawnParticle(j, intensity);
+                                    break;
+                                }
+                            }
+                        }
+                    } else if (preset.geometry === 'kiting_stars' && particleTypes) {
+                        // For Ussak, try to spawn a flare first, then fall back to star
+                        let spawned = false;
+                        
+                        // Try to find an available flare slot first
+                        for (let j = preset.particleCount; j < particleTypes.length; j++) {
+                            if (ages[j] >= lifetimes[j]) {
+                                const intensity = 1.0 + smoothedFeatures.rms * 0.5;
+                                this.spawnParticle(j, intensity);
+                                spawned = true;
+                                break;
+                            }
+                        }
+                        
+                        // If no flare slots available, spawn a star instead
+                        if (!spawned) {
+                            for (let j = 0; j < preset.particleCount; j++) {
+                                if (ages[j] >= lifetimes[j]) {
+                                    const intensity = 1.0 + smoothedFeatures.rms * 0.6;
+                                    this.spawnParticle(j, intensity);
+                                    break;
+                                }
+                            }
+                        }
+                    } else {
+                        // Other makams - normal spawning
+                        for (let j = 0; j < ages.length; j++) {
+                            if (ages[j] >= lifetimes[j]) {
+                                const intensity = 1.2 + smoothedFeatures.rms * 0.8;
+                                this.spawnParticle(j, intensity);
+                                break;
+                            }
+                        }
+                    }
+                }
+                
+                if (needsUpdate) {
+                    this.particles.geometry.attributes.age.needsUpdate = true;
+                    this.particles.geometry.attributes.position.needsUpdate = true;
+                }
+            }
+
+            setupEventListeners() {
+                const playButton = document.getElementById('play-button');
+                playButton.addEventListener('click', () => this.togglePlayback());
+
+                this.audio.addEventListener('ended', () => {
+                    this.isPlaying = false;
+                    playButton.textContent = 'Play Visualization';
+                });
+                
+                this.audio.addEventListener('loadeddata', () => {
+                    console.log('✅ Audio loaded and ready');
+                });
+            }
+
+            togglePlayback() {
+                const playButton = document.getElementById('play-button');
+                
+                if (!this.isPlaying) {
+                    this.audio.play().then(() => {
+                        this.isPlaying = true;
+                        this.startTime = Date.now() - (this.audio.currentTime * 1000);
+                        playButton.textContent = 'Pause';
+                        this.updateStatus('Playing...');
+                    }).catch(error => {
+                        console.error('Error playing audio:', error);
+                        this.updateStatus('Error playing audio');
+                    });
+                } else {
+                    this.audio.pause();
+                    this.isPlaying = false;
+                    playButton.textContent = 'Play Visualization';
+                    this.updateStatus('Paused');
+                }
+            }
+
+            updateVisualization() {
+                if (this.currentMakam === 'ussak' || this.currentMakam === 'irak' || this.currentMakam === 'rast') {
+                    // Use 2D systems for Ussak, Irak, and Rast
+                    const currentTime = this.audio.currentTime;
+                    const deltaTime = 1/60; // Assume 60fps
+                    
+                    // Update time display
+                    const minutes = Math.floor(currentTime / 60);
+                    const seconds = Math.floor(currentTime % 60);
+                    document.getElementById('time-display').textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+
+                    let rawRMS = 0;
+                    let rawCentroid = 0;
+                    let onsetDetected = false;
+
+                    // Demo animation if no features loaded
+                    if (!this.featuresLoaded || !this.audioFeatures) {
+                        const time = Date.now() * 0.001;
+                        rawRMS = (Math.sin(time * 2) + 1) * 0.5;
+                        rawCentroid = (Math.sin(time * 0.5) + 1) * 0.5;
+                        onsetDetected = Math.sin(time * 4) > 0.8;
+                    } else if (this.isPlaying) {
+                        // Find current feature values based on time
+                        const timeIndex = Math.floor(currentTime * this.audioFeatures.sample_rate / 512);
+                        const clampedIndex = Math.min(timeIndex, this.audioFeatures.rms.values.length - 1);
+
+                        if (clampedIndex >= 0) {
+                            rawRMS = this.audioFeatures.rms.values[clampedIndex] || 0;
+                            rawCentroid = this.audioFeatures.spectral_centroid.values[clampedIndex] || 0;
+
+                            // Check for onset events
+                            const onsetThreshold = 0.1;
+                            const nearbyOnsets = this.audioFeatures.onsets.filter(onset => 
+                                Math.abs(onset - currentTime) < onsetThreshold
+                            );
+
+                            onsetDetected = nearbyOnsets.length > 0;
+                            
+                            // No smoothing for 2D makams - immediate response
+                            if (onsetDetected) {
+                                this.lastOnsetTime = currentTime;
+                                console.log(`🎵 ${this.currentMakam} onset detected at ${currentTime.toFixed(2)}s, nearby onsets: ${nearbyOnsets.length}`);
+                            }
+                        }
+                    }
+
+                    // Apply smoothing to reduce visual jitter
+                    const smoothedFeatures = this.smoothAudioFeatures(rawRMS, rawCentroid);
+
+                    // Update UI indicators with smoothed values
+                    document.getElementById('rms-bar').style.width = `${smoothedFeatures.rms * 100}%`;
+                    document.getElementById('centroid-bar').style.width = `${smoothedFeatures.centroid * 100}%`;
+                    document.getElementById('onset-indicator').style.color = onsetDetected ? '#ff0000' : '#000000';
+
+                    // Update appropriate 2D system
+                    if (this.currentMakam === 'ussak') {
+                        this.updatePaintingBlobs(deltaTime, smoothedFeatures, onsetDetected);
+                        this.render2DPainting();
+                    } else if (this.currentMakam === 'irak') {
+                        this.updateHorizontalLines(deltaTime, smoothedFeatures, onsetDetected);
+                        this.render2DHorizontalLines();
+                    } else if (this.currentMakam === 'rast') {
+                        this.updateRastHealingPulse(deltaTime, smoothedFeatures, onsetDetected);
+                        this.render2DRastMandala(smoothedFeatures);
+                    }
+                    
+                    return; // Exit early for 2D makams
+                }
+                
+                // Original 3D system for other makams
+                if (!this.particles) return;
+
+                const currentTime = this.audio.currentTime;
+                const deltaTime = 1/60; // Assume 60fps
+                
+                // Update time display
+                const minutes = Math.floor(currentTime / 60);
+                const seconds = Math.floor(currentTime % 60);
+                document.getElementById('time-display').textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+
+                let rawRMS = 0;
+                let rawCentroid = 0;
+                let onsetDetected = false;
+
+                // Demo animation if no features loaded
+                if (!this.featuresLoaded || !this.audioFeatures) {
+                    const time = Date.now() * 0.001;
+                    rawRMS = (Math.sin(time * 2) + 1) * 0.5;
+                    rawCentroid = (Math.sin(time * 0.5) + 1) * 0.5;
+                    onsetDetected = Math.sin(time * 4) > 0.8;
+                } else if (this.isPlaying) {
+                    // Find current feature values based on time
+                    const timeIndex = Math.floor(currentTime * this.audioFeatures.sample_rate / 512);
+                    const clampedIndex = Math.min(timeIndex, this.audioFeatures.rms.values.length - 1);
+
+                    if (clampedIndex >= 0) {
+                        rawRMS = this.audioFeatures.rms.values[clampedIndex] || 0;
+                        rawCentroid = this.audioFeatures.spectral_centroid.values[clampedIndex] || 0;
+
+                        // Check for onset events
+                        const onsetThreshold = 0.1;
+                        const nearbyOnsets = this.audioFeatures.onsets.filter(onset => 
+                            Math.abs(onset - currentTime) < onsetThreshold
+                        );
+
+                        onsetDetected = nearbyOnsets.length > 0;
+                        
+                        // Prevent rapid onset retriggering (except for Neva - immediate response)
+                        if (this.currentMakam === 'neva') {
+                            // Neva: No delay, immediate onset response for mental clarity
+                            if (onsetDetected) {
+                                this.lastOnsetTime = currentTime;
+                            }
+                        } else {
+                            // Other makams: Prevent rapid retriggering for smoother therapeutic effect
+                            if (onsetDetected && (currentTime - this.lastOnsetTime) > 0.2) {
+                                this.lastOnsetTime = currentTime;
+                            } else if (onsetDetected) {
+                                onsetDetected = false; // Too soon after last onset
+                            }
+                        }
+                    }
+                }
+
+                // Apply smoothing to reduce visual jitter
+                const smoothedFeatures = this.smoothAudioFeatures(rawRMS, rawCentroid);
+
+                // Update UI indicators with smoothed values
+                document.getElementById('rms-bar').style.width = `${smoothedFeatures.rms * 100}%`;
+                document.getElementById('centroid-bar').style.width = `${smoothedFeatures.centroid * 100}%`;
+                document.getElementById('onset-indicator').style.color = onsetDetected ? '#ff0000' : '#000000';
+
+                // Update particle system with smoothed features
+                this.updateParticles(deltaTime, smoothedFeatures, onsetDetected);
+
+                // Update shader uniforms with smoothed values
+                this.particles.material.uniforms.rmsValue.value = smoothedFeatures.rms;
+                this.particles.material.uniforms.centroidValue.value = smoothedFeatures.centroid;
+                this.particles.material.uniforms.time.value = currentTime;
+                
+                // Add makam-specific glow enhancement for Neva
+                this.particles.material.uniforms.glowIntensity.value = this.currentMakam === 'neva' ? 2.5 : 1.0;
+
+                // Gentle rotation
+                this.particles.rotation.y += 0.005;
+            }
+
+            animate() {
+                requestAnimationFrame(() => this.animate());
+                
+                this.updateVisualization();
+                
+                // Makam-specific camera movement
+                const time = Date.now() * 0.0008;
+                const preset = this.makamPresets[this.currentMakam];
+                
+                if (this.isPlaying || !this.featuresLoaded) {
+                    switch (preset.motionStyle) {
+                        case 'radial_breathing':
+                            // Gentle breathing camera for Rast
+                            this.camera.position.x = Math.cos(time * 0.5) * 5;
+                            this.camera.position.y = Math.sin(time * 0.3) * 3;
+                            this.camera.position.z = 40 + Math.sin(time * 0.2) * 8;
+                            this.camera.lookAt(0, 0, 0);
+                            break;
+                            
+                        case 'gentle_bobbing':
+                            // Soft swaying for Ussak
+                            this.camera.position.x = Math.cos(time * 0.3) * 6;
+                            this.camera.position.y = Math.sin(time * 0.4) * 4;
+                            this.camera.position.z = 45;
+                            this.camera.lookAt(0, 0, 0);
+                            break;
+                            
+                        case 'drifting_stars':
+                            // Dreamy swaying for Ussak with gentle upward look angle
+                            this.camera.position.x = Math.cos(time * 0.3) * 8;
+                            this.camera.position.y = Math.sin(time * 0.4) * 5 + 3; // Slight upward tilt
+                            this.camera.position.z = 45;
+                            this.camera.lookAt(0, 2, 0); // Look slightly upward to see stars better
+                            break;
+                            
+                        case 'outward_spiral':
+                            // Spiral viewing for Neva
+                            this.camera.position.x = Math.cos(time) * 15;
+                            this.camera.position.y = Math.sin(time) * 10;
+                            this.camera.position.z = 35;
+                            this.camera.lookAt(0, 0, 0);
+                            break;
+                            
+                        case 'balanced_rotation':
+                            // Balanced rotation for Irak
+                            this.camera.position.x = Math.cos(time * 0.6) * 8;
+                            this.camera.position.y = Math.sin(time * 0.6) * 8;
+                            this.camera.position.z = 50;
+                            this.camera.lookAt(0, 0, 0);
+                            break;
+                            
+                        default:
+                            // Default gentle movement
+                            this.camera.position.set(0, 0, 50);
+                            this.camera.lookAt(0, 0, 0);
+                    }
+                } else {
+                    // Static view when not playing
+                    this.camera.position.set(0, 0, 50);
+                    this.camera.lookAt(0, 0, 0);
+                }
+                
+                if (this.renderer && this.scene && this.camera) {
+                    this.renderer.render(this.scene, this.camera);
+                }
+            }
+
+            onWindowResize() {
+                if (this.camera && this.renderer) {
+                    this.camera.aspect = window.innerWidth / window.innerHeight;
+                    this.camera.updateProjectionMatrix();
+                    this.renderer.setSize(window.innerWidth, window.innerHeight);
+                }
+                
+                // Also resize 2D canvas if we're using it
+                if (this.currentMakam === 'ussak' || this.currentMakam === 'irak' || this.currentMakam === 'rast') {
+                    this.canvas2D.width = window.innerWidth;
+                    this.canvas2D.height = window.innerHeight;
+                }
+                
+                // Also resize Rast mandala canvas if we're using it
+                if (this.currentMakam === 'rast' && this.rastCanvas) {
+                    this.rastCanvas.width = window.innerWidth;
+                    this.rastCanvas.height = window.innerHeight;
+                }
+            }
+
+            setup2DCanvas() {
+                // Set canvas size to match window
+                this.canvas2D.width = window.innerWidth;
+                this.canvas2D.height = window.innerHeight;
+                
+                if (this.currentMakam === 'ussak') {
+                    // Clear canvas with twilight blue background for Ussak
+                    this.ctx2D.fillStyle = 'rgba(30, 40, 80, 1)'; // Twilight blue background
+                    this.ctx2D.fillRect(0, 0, this.canvas2D.width, this.canvas2D.height);
+                    
+                    // Reset painting state
+                    this.paintingBlobs = [];
+                    this.trailFrames = [];
+                } else if (this.currentMakam === 'irak') {
+                    // Create earth-to-sky gradient background for Irak
+                    const gradient = this.ctx2D.createLinearGradient(0, this.canvas2D.height, 0, 0);
+                    gradient.addColorStop(0, 'rgb(139, 69, 42)'); // Deep terracotta at bottom (earth)
+                    gradient.addColorStop(1, 'rgb(72, 118, 118)'); // Cool teal at top (sky)
+                    this.ctx2D.fillStyle = gradient;
+                    this.ctx2D.fillRect(0, 0, this.canvas2D.width, this.canvas2D.height);
+                    
+                    // Initialize Irak horizontal lines system
+                    this.horizontalLines = [];
+                    this.verticalLines = [];
+                } else if (this.currentMakam === 'rast') {
+                    // Deep midnight indigo background for Rast
+                    this.ctx2D.fillStyle = 'rgb(25, 15, 80)'; // Deep midnight indigo
+                    this.ctx2D.fillRect(0, 0, this.canvas2D.width, this.canvas2D.height);
+                    
+                    // Initialize Rast healing pulse system
+                    this.rastCanvas.width = window.innerWidth;
+                    this.rastCanvas.height = window.innerHeight;
+                    this.rastOrb.style.display = 'block';
+                    document.body.style.background = '#220000'; // Dark red background
+                }
+                
+                console.log(`✅ 2D Canvas setup for ${this.currentMakam} system`);
+            }
+
+            spawnPaintingBlob(intensity = 1.0, rmsValue = 0.5) {
+                const side = Math.random() > 0.5 ? 'left' : 'right';
+                
+                const blob = {
+                    x: side === 'left' ? -20 : window.innerWidth + 20,
+                    y: Math.random() * window.innerHeight,
+                    vx: side === 'left' ? (1.5 + Math.random() * 2) * intensity : -(1.5 + Math.random() * 2) * intensity,
+                    vy: (Math.random() - 0.5) * 1.5,
+                    baseSize: (4 + Math.random() * 6) * intensity, // Base size before RMS scaling
+                    size: (4 + Math.random() * 6) * intensity * (0.8 + rmsValue * 0.6), // RMS affects initial size
+                    age: 0,
+                    lifetime: 3 + Math.random() * 4, // Reduced from 4-10 to 3-7 seconds for better performance
+                    color: {
+                        r: 255, // Start with pastel peach
+                        g: 218, 
+                        b: 185
+                    },
+                    trail: [], // Store past positions for trail
+                    lastCentroid: null // Cache for color calculations
+                };
+                
+                this.paintingBlobs.push(blob);
+                console.log(`🎨 Spawned blob: baseSize=${blob.baseSize.toFixed(1)}, RMS-size=${blob.size.toFixed(1)}, speed=${Math.abs(blob.vx).toFixed(1)}, lifetime=${blob.lifetime.toFixed(1)}s`);
+            }
+            
+            updatePaintingBlobs(deltaTime, smoothedFeatures, onsetDetected) {
+                // Spawn more blobs but keep performance optimized
+                if (onsetDetected) {
+                    const spawnCount = 2 + Math.floor(smoothedFeatures.rms * 3); // 2-5 blobs per onset
+                    
+                    // Limit total active blobs to max 20 at once (increased from 6)
+                    const activeBlobCount = this.paintingBlobs.length;
+                    const actualSpawnCount = Math.min(spawnCount, Math.max(0, 20 - activeBlobCount));
+                    
+                    for (let i = 0; i < actualSpawnCount; i++) {
+                        const intensity = 0.8 + smoothedFeatures.rms * 0.7;
+                        this.spawnPaintingBlob(intensity, smoothedFeatures.rms);
+                    }
+                    console.log(`🎨 Ussak onset! RMS: ${smoothedFeatures.rms.toFixed(3)}, Centroid: ${smoothedFeatures.centroid.toFixed(3)}, Active: ${activeBlobCount}, Spawning: ${actualSpawnCount}`);
+                }
+                
+                // Update existing blobs with optimized calculations
+                for (let i = this.paintingBlobs.length - 1; i >= 0; i--) {
+                    const blob = this.paintingBlobs[i];
+                    
+                    // Add current position to trail (shorter trail for performance)
+                    blob.trail.push({ x: blob.x, y: blob.y });
+                    if (blob.trail.length > 5) { // Reduced from 8 to 5 for better performance
+                        blob.trail.shift();
+                    }
+                    
+                    // Update position with RMS influence (optimized calculations)
+                    blob.x += blob.vx * deltaTime * 60;
+                    blob.y += blob.vy * deltaTime * 60;
+                    
+                    // Simplified RMS vertical bobbing - still visible but more efficient
+                    const time = Date.now() * 0.002;
+                    const rmsDrift = Math.sin(time + blob.x * 0.01) * smoothedFeatures.rms * 12;
+                    blob.y += rmsDrift;
+                    
+                    // Optimized color calculation - cache color values
+                    if (!blob.lastCentroid || Math.abs(blob.lastCentroid - smoothedFeatures.centroid) > 0.05) {
+                        const peachColor = { r: 255, g: 218, b: 185 };
+                        const lavenderColor = { r: 204, g: 179, b: 230 };
+                        
+                        const blendFactor = Math.min(smoothedFeatures.centroid * 1.2, 1.0);
+                        blob.color.r = Math.floor(peachColor.r + (lavenderColor.r - peachColor.r) * blendFactor);
+                        blob.color.g = Math.floor(peachColor.g + (lavenderColor.g - peachColor.g) * blendFactor);
+                        blob.color.b = Math.floor(peachColor.b + (lavenderColor.b - peachColor.b) * blendFactor);
+                        blob.lastCentroid = smoothedFeatures.centroid;
+                    }
+                    
+                    // Update size based on current RMS - circles pulse with volume
+                    blob.size = blob.baseSize * (0.7 + smoothedFeatures.rms * 0.8); // 0.7x to 1.5x size scaling
+                    
+                    blob.age += deltaTime;
+                    
+                    // Remove blobs that are off-screen or too old
+                    if (blob.x < -50 || blob.x > window.innerWidth + 50 || blob.age > blob.lifetime) {
+                        this.paintingBlobs.splice(i, 1);
+                    }
+                }
+            }
+
+            render2DPainting() {
+                // Apply twilight blue fade to create trailing effect while maintaining background
+                this.ctx2D.fillStyle = 'rgba(30, 40, 80, 0.03)'; // Reduced fade for performance
+                this.ctx2D.fillRect(0, 0, this.canvas2D.width, this.canvas2D.height);
+                
+                // Draw all blobs and their trails with optimized rendering
+                this.paintingBlobs.forEach(blob => {
+                    // Simplified trail rendering for performance
+                    blob.trail.forEach((point, index) => {
+                        const trailOpacity = (index + 1) / blob.trail.length * 0.3; // Reduced opacity for performance
+                        const trailSize = blob.size * (0.4 + (index / blob.trail.length) * 0.6);
+                        
+                        this.ctx2D.fillStyle = `rgba(${blob.color.r}, ${blob.color.g}, ${blob.color.b}, ${trailOpacity})`;
+                        this.ctx2D.beginPath();
+                        this.ctx2D.arc(point.x, point.y, trailSize, 0, Math.PI * 2);
+                        this.ctx2D.fill();
+                    });
+                    
+                    // Draw main blob with soft glow effect
+                    const lifeProgress = blob.age / blob.lifetime;
+                    const fadeAlpha = lifeProgress < 0.5 ? 1.0 : 1.0 - ((lifeProgress - 0.5) / 0.5); // Fade in last 50% for quicker turnover
+                    
+                    // Create gradient for soft peachy-lavender glow effect
+                    const gradient = this.ctx2D.createRadialGradient(blob.x, blob.y, 0, blob.x, blob.y, blob.size * 1.5);
+                    gradient.addColorStop(0, `rgba(${blob.color.r}, ${blob.color.g}, ${blob.color.b}, ${fadeAlpha * 0.9})`);
+                    gradient.addColorStop(0.6, `rgba(${blob.color.r}, ${blob.color.g}, ${blob.color.b}, ${fadeAlpha * 0.6})`);
+                    gradient.addColorStop(1, `rgba(${blob.color.r}, ${blob.color.g}, ${blob.color.b}, 0)`);
+                    
+                    this.ctx2D.fillStyle = gradient;
+                    this.ctx2D.beginPath();
+                    this.ctx2D.arc(blob.x, blob.y, blob.size * 1.5, 0, Math.PI * 2);
+                    this.ctx2D.fill();
+                    
+                    // Add inner bright core
+                    this.ctx2D.fillStyle = `rgba(${blob.color.r}, ${blob.color.g}, ${blob.color.b}, ${fadeAlpha * 0.8})`;
+                    this.ctx2D.beginPath();
+                    this.ctx2D.arc(blob.x, blob.y, blob.size * 0.6, 0, Math.PI * 2);
+                    this.ctx2D.fill();
+                });
+            }
+
+            spawnTriangleParticle(intensity = 1.0, rmsValue = 0.5) {
+                const triangle = {
+                    x: 50 + Math.random() * (window.innerWidth - 100), // Spawn within canvas bounds
+                    y: 50 + Math.random() * (window.innerHeight - 100), // Spawn within canvas bounds
+                    vx: (Math.random() - 0.5) * 4 * intensity,
+                    vy: (Math.random() - 0.5) * 4 * intensity,
+                    baseSize: (8 + Math.random() * 12) * intensity, // Base size for RMS scaling
+                    size: (8 + Math.random() * 12) * intensity, // Will be updated by RMS
+                    rotation: Math.random() * Math.PI * 2,
+                    rotationSpeed: (Math.random() - 0.5) * 0.3, // Spinning speed
+                    age: 0,
+                    lifetime: 4 + Math.random() * 6, // Reduced from 6-14 to 4-10 seconds for faster turnover
+                    baseSpeed: intensity,
+                    color: {
+                        r: 0, // Black triangles
+                        g: 0,
+                        b: 0
+                    },
+                    glowIntensity: 0.5, // Will be controlled by spectral centroid
+                    lastCentroid: null
+                };
+                
+                this.triangleParticles.push(triangle);
+                console.log(`🔺 Spawned triangle: baseSize=${triangle.baseSize.toFixed(1)}, pos=(${triangle.x.toFixed(0)},${triangle.y.toFixed(0)}), lifetime=${triangle.lifetime.toFixed(1)}s`);
+            }
+            
+            updateTriangleParticles(deltaTime, smoothedFeatures, onsetDetected) {
+                // Enhanced psychedelic onset sensitivity for Irak
+                if (onsetDetected) {
+                    // More sensitive spawning - more particles but smaller base sizes
+                    const baseSpawnCount = 6 + Math.floor(smoothedFeatures.rms * 8); // 6-14 triangles per onset
+                    const psychedelicBonus = Math.floor(smoothedFeatures.centroid * 4); // Up to 4 extra for high frequencies
+                    const spawnCount = Math.min(baseSpawnCount + psychedelicBonus, 18); // Cap at 18 for performance
+                    
+                    // Limit total active triangles to max 30 at once for psychedelic density
+                    const activeTriangleCount = this.triangleParticles.length;
+                    const actualSpawnCount = Math.min(spawnCount, Math.max(0, 30 - activeTriangleCount));
+                    
+                    for (let i = 0; i < actualSpawnCount; i++) {
+                        const intensity = 0.6 + smoothedFeatures.rms * 0.6; // Smaller base intensity for performance
+                        this.spawnTriangleParticle(intensity, smoothedFeatures.rms);
+                    }
+                    
+                    // Psychedelic burst effect - create circular spawn pattern for dramatic onsets
+                    if (smoothedFeatures.rms > 0.7 && smoothedFeatures.centroid > 0.6) {
+                        const burstCount = Math.min(8, 35 - this.triangleParticles.length);
+                        const centerX = window.innerWidth / 2;
+                        const centerY = window.innerHeight / 2;
+                        
+                        for (let i = 0; i < burstCount; i++) {
+                            const angle = (i / burstCount) * Math.PI * 2;
+                            const radius = 100 + Math.random() * 150;
+                            const triangle = {
+                                x: centerX + Math.cos(angle) * radius,
+                                y: centerY + Math.sin(angle) * radius,
+                                vx: Math.cos(angle) * 2,
+                                vy: Math.sin(angle) * 2,
+                                baseSize: 6 + Math.random() * 8, // Smaller sizes
+                                size: 6 + Math.random() * 8,
+                                rotation: angle,
+                                rotationSpeed: (Math.random() - 0.5) * 0.5,
+                                age: 0,
+                                lifetime: 2 + Math.random() * 3, // Shorter for burst effect
+                                baseSpeed: intensity,
+                                color: { r: 0, g: 0, b: 0 },
+                                glowIntensity: 1.0 + smoothedFeatures.centroid,
+                                lastCentroid: null
+                            };
+                            this.triangleParticles.push(triangle);
+                        }
+                        console.log(`💥 Psychedelic burst! Spawned ${burstCount} triangles in circular pattern`);
+                    }
+                    
+                    console.log(`🔺 Irak onset! RMS: ${smoothedFeatures.rms.toFixed(3)}, Centroid: ${smoothedFeatures.centroid.toFixed(3)}, Active: ${activeTriangleCount}, Spawning: ${actualSpawnCount}`);
+                }
+                
+                // Update existing triangles
+                for (let i = this.triangleParticles.length - 1; i >= 0; i--) {
+                    const triangle = this.triangleParticles[i];
+                    
+                    // Psychedelic pulsing effect based on audio
+                    const timePulse = Math.sin(Date.now() * 0.01 + triangle.x * 0.01) * 0.3;
+                    const audioPulse = smoothedFeatures.rms * 0.4;
+                    
+                    // Onset affects speed - particles accelerate on onsets
+                    if (onsetDetected) {
+                        const speedBoost = 1.3 + smoothedFeatures.rms * 1.5; // Reduced for performance
+                        triangle.vx *= speedBoost;
+                        triangle.vy *= speedBoost;
+                    }
+                    
+                    // Update position with psychedelic drift
+                    triangle.x += triangle.vx * deltaTime * 60;
+                    triangle.y += triangle.vy * deltaTime * 60;
+                    
+                    // Psychedelic rotation based on position and audio
+                    triangle.rotation += triangle.rotationSpeed + timePulse + audioPulse;
+                    
+                    // RMS controls size with psychedelic pulsing - keep reasonable for performance
+                    triangle.size = triangle.baseSize * (0.4 + smoothedFeatures.rms * 1.2 + timePulse * 0.3); // 0.4x to 1.9x scaling
+                    
+                    // Spectral centroid controls glow intensity with psychedelic enhancement
+                    triangle.glowIntensity = 0.4 + smoothedFeatures.centroid * 1.4 + Math.abs(timePulse); // Enhanced glow
+                    
+                    triangle.age += deltaTime;
+                    
+                    // Wrap around screen edges
+                    if (triangle.x < -50) triangle.x = window.innerWidth + 50;
+                    if (triangle.x > window.innerWidth + 50) triangle.x = -50;
+                    if (triangle.y < -50) triangle.y = window.innerHeight + 50;
+                    if (triangle.y > window.innerHeight + 50) triangle.y = -50;
+                    
+                    // Remove triangles that are too old
+                    if (triangle.age > triangle.lifetime) {
+                        this.triangleParticles.splice(i, 1);
+                    }
+                }
+            }
+
+            render2DTriangles() {
+                // Recreate earth-to-sky gradient background with slight fade
+                const gradient = this.ctx2D.createLinearGradient(0, this.canvas2D.height, 0, 0);
+                gradient.addColorStop(0, 'rgba(139, 69, 42, 0.02)'); // Subtle terracotta fade
+                gradient.addColorStop(1, 'rgba(72, 118, 118, 0.02)'); // Subtle teal fade
+                this.ctx2D.fillStyle = gradient;
+                this.ctx2D.fillRect(0, 0, this.canvas2D.width, this.canvas2D.height);
+                
+                // Draw all spinning triangles
+                this.triangleParticles.forEach(triangle => {
+                    const lifeProgress = triangle.age / triangle.lifetime;
+                    const fadeAlpha = lifeProgress < 0.7 ? 1.0 : 1.0 - ((lifeProgress - 0.7) / 0.3);
+                    
+                    this.ctx2D.save();
+                    this.ctx2D.translate(triangle.x, triangle.y);
+                    this.ctx2D.rotate(triangle.rotation);
+                    
+                    // Draw glow effect first (controlled by spectral centroid)
+                    const glowSize = triangle.size * (1.5 + triangle.glowIntensity * 0.8);
+                    const glowGradient = this.ctx2D.createRadialGradient(0, 0, 0, 0, 0, glowSize);
+                    glowGradient.addColorStop(0, `rgba(255, 255, 255, ${fadeAlpha * triangle.glowIntensity * 0.3})`);
+                    glowGradient.addColorStop(0.5, `rgba(255, 255, 255, ${fadeAlpha * triangle.glowIntensity * 0.1})`);
+                    glowGradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
+                    
+                    this.ctx2D.fillStyle = glowGradient;
+                    this.ctx2D.beginPath();
+                    this.ctx2D.arc(0, 0, glowSize, 0, Math.PI * 2);
+                    this.ctx2D.fill();
+                    
+                    // Draw main black triangle
+                    this.ctx2D.fillStyle = `rgba(0, 0, 0, ${fadeAlpha})`;
+                    this.ctx2D.beginPath();
+                    
+                    // Triangle vertices (pointing up) - size controlled by RMS
+                    const size = triangle.size;
+                    this.ctx2D.moveTo(0, -size); // Top point
+                    this.ctx2D.lineTo(-size * 0.866, size * 0.5); // Bottom left
+                    this.ctx2D.lineTo(size * 0.866, size * 0.5); // Bottom right
+                    this.ctx2D.closePath();
+                    this.ctx2D.fill();
+                    
+                    // Add white stroke for better visibility against gradient background
+                    this.ctx2D.strokeStyle = `rgba(255, 255, 255, ${fadeAlpha * 0.8})`;
+                    this.ctx2D.lineWidth = 1.5;
+                    this.ctx2D.stroke();
+                    
+                    this.ctx2D.restore();
+                });
+            }
+
+            spawnSunParticle(intensity = 1.0, angleOffset = 0) {
+                const centerX = this.sun.x;
+                const centerY = this.sun.y;
+                const distance = 80 + Math.random() * 60; // 80-140 pixels from center
+                const angle = angleOffset + (Math.random() - 0.5) * 0.8; // Slight randomization
+                
+                const particle = {
+                    x: centerX + Math.cos(angle) * distance,
+                    y: centerY + Math.sin(angle) * distance,
+                    vx: Math.cos(angle) * 0.5,
+                    vy: Math.sin(angle) * 0.5,
+                    size: (3 + Math.random() * 5) * intensity,
+                    age: 0,
+                    lifetime: 3 + Math.random() * 4,
+                    color: { r: 255, g: 215, b: 50 }, // Warm sunrise gold
+                    orbitAngle: angle,
+                    orbitSpeed: 0.02 + Math.random() * 0.03,
+                    orbitRadius: distance
+                };
+                
+                this.sunParticles.push(particle);
+                console.log(`☀️ Spawned sun particle at distance ${distance.toFixed(0)} pixels`);
+            }
+            
+            updateRastSun(deltaTime, smoothedFeatures, onsetDetected) {
+                // Update central sun
+                this.sun.size = this.sun.baseSize * (0.8 + smoothedFeatures.rms * 1.0); // RMS controls size
+                
+                // Spectral centroid makes sun whiter
+                const whiteness = smoothedFeatures.centroid * 0.8;
+                this.sun.color.r = 255;
+                this.sun.color.g = Math.floor(215 + (255 - 215) * whiteness);
+                this.sun.color.b = Math.floor(50 + (255 - 50) * whiteness);
+                
+                // Onset events spawn surrounding particles
+                if (onsetDetected) {
+                    const spawnCount = 5 + Math.floor(smoothedFeatures.rms * 2); // 5-7 particles per onset
+                    
+                    // Limit total particles for performance
+                    const activeParticleCount = this.sunParticles.length;
+                    const actualSpawnCount = Math.min(spawnCount, Math.max(0, 40 - activeParticleCount));
+                    
+                    for (let i = 0; i < actualSpawnCount; i++) {
+                        const angleOffset = (i / actualSpawnCount) * Math.PI * 2; // Spread around circle
+                        const intensity = 0.8 + smoothedFeatures.rms * 0.7;
+                        this.spawnSunParticle(intensity, angleOffset);
+                    }
+                    console.log(`☀️ Rast onset! Spawning ${actualSpawnCount} sun particles around central sun`);
+                }
+                
+                // Update surrounding particles
+                for (let i = this.sunParticles.length - 1; i >= 0; i--) {
+                    const particle = this.sunParticles[i];
+                    
+                    // Orbital motion around sun
+                    particle.orbitAngle += particle.orbitSpeed;
+                    particle.x = this.sun.x + Math.cos(particle.orbitAngle) * particle.orbitRadius;
+                    particle.y = this.sun.y + Math.sin(particle.orbitAngle) * particle.orbitRadius;
+                    
+                    // Gradual outward drift
+                    particle.orbitRadius += deltaTime * 10;
+                    
+                    particle.age += deltaTime;
+                    
+                    // Remove particles that are too old or too far
+                    if (particle.age > particle.lifetime || particle.orbitRadius > 300) {
+                        this.sunParticles.splice(i, 1);
+                    }
+                }
+            }
+            
+            render2DRastSun() {
+                // Deep midnight indigo background with slight fade
+                this.ctx2D.fillStyle = 'rgba(25, 15, 80, 0.05)';
+                this.ctx2D.fillRect(0, 0, this.canvas2D.width, this.canvas2D.height);
+                
+                // Draw surrounding particles first
+                this.sunParticles.forEach(particle => {
+                    const lifeProgress = particle.age / particle.lifetime;
+                    const fadeAlpha = lifeProgress < 0.8 ? 1.0 : 1.0 - ((lifeProgress - 0.8) / 0.2);
+                    
+                    // Golden glow effect
+                    const glowGradient = this.ctx2D.createRadialGradient(
+                        particle.x, particle.y, 0,
+                        particle.x, particle.y, particle.size * 2
+                    );
+                    glowGradient.addColorStop(0, `rgba(${particle.color.r}, ${particle.color.g}, ${particle.color.b}, ${fadeAlpha * 0.8})`);
+                    glowGradient.addColorStop(1, `rgba(${particle.color.r}, ${particle.color.g}, ${particle.color.b}, 0)`);
+                    
+                    this.ctx2D.fillStyle = glowGradient;
+                    this.ctx2D.beginPath();
+                    this.ctx2D.arc(particle.x, particle.y, particle.size * 2, 0, Math.PI * 2);
+                    this.ctx2D.fill();
+                    
+                    // Core particle
+                    this.ctx2D.fillStyle = `rgba(${particle.color.r}, ${particle.color.g}, ${particle.color.b}, ${fadeAlpha})`;
+                    this.ctx2D.beginPath();
+                    this.ctx2D.arc(particle.x, particle.y, particle.size, 0, Math.PI * 2);
+                    this.ctx2D.fill();
+                });
+                
+                // Draw central sun with large glow
+                const sunGlowGradient = this.ctx2D.createRadialGradient(
+                    this.sun.x, this.sun.y, 0,
+                    this.sun.x, this.sun.y, this.sun.size * 3
+                );
+                sunGlowGradient.addColorStop(0, `rgba(${this.sun.color.r}, ${this.sun.color.g}, ${this.sun.color.b}, 0.9)`);
+                sunGlowGradient.addColorStop(0.5, `rgba(${this.sun.color.r}, ${this.sun.color.g}, ${this.sun.color.b}, 0.4)`);
+                sunGlowGradient.addColorStop(1, `rgba(${this.sun.color.r}, ${this.sun.color.g}, ${this.sun.color.b}, 0)`);
+                
+                this.ctx2D.fillStyle = sunGlowGradient;
+                this.ctx2D.beginPath();
+                this.ctx2D.arc(this.sun.x, this.sun.y, this.sun.size * 3, 0, Math.PI * 2);
+                this.ctx2D.fill();
+                
+                // Draw central sun core
+                this.ctx2D.fillStyle = `rgb(${this.sun.color.r}, ${this.sun.color.g}, ${this.sun.color.b})`;
+                this.ctx2D.beginPath();
+                this.ctx2D.arc(this.sun.x, this.sun.y, this.sun.size, 0, Math.PI * 2);
+                this.ctx2D.fill();
+                
+                // Add bright center highlight
+                this.ctx2D.fillStyle = `rgba(255, 255, 255, 0.6)`;
+                this.ctx2D.beginPath();
+                this.ctx2D.arc(this.sun.x, this.sun.y, this.sun.size * 0.4, 0, Math.PI * 2);
+                this.ctx2D.fill();
+            }
+
+            spawnTunnelParticle(intensity = 1.0) {
+                const particle = {
+                    x: (Math.random() - 0.5) * 300, // Slightly narrower spawn area for better tunnel effect
+                    y: (Math.random() - 0.5) * 300,
+                    z: 180 + Math.random() * 40, // Consistent depth range
+                    baseSize: (3 + Math.random() * 5) * intensity, // Base size for audio reactivity
+                    size: (3 + Math.random() * 5) * intensity,
+                    age: 0,
+                    lifetime: 5 + Math.random() * 3, // Longer lifetime for smoother tunnel
+                    color: { r: 255, g: 215, b: 50 }, // Warm sunrise gold
+                    speed: 45 + Math.random() * 15 // Truly constant speed range 45-60
+                };
+                
+                this.tunnelParticles.push(particle);
+            }
+            
+            updateRastTunnel(deltaTime, smoothedFeatures, onsetDetected) {
+                // Update tunnel depth for movement effect
+                this.tunnelDepth += deltaTime * 20;
+                
+                // Onset events spawn tunnel particles
+                if (onsetDetected) {
+                    const spawnCount = 4 + Math.floor(smoothedFeatures.rms * 4); // 4-8 particles per onset
+                    
+                    // Limit total particles for performance
+                    const activeParticleCount = this.tunnelParticles.length;
+                    const actualSpawnCount = Math.min(spawnCount, Math.max(0, 50 - activeParticleCount));
+                    
+                    for (let i = 0; i < actualSpawnCount; i++) {
+                        const intensity = 0.9 + smoothedFeatures.rms * 0.6;
+                        this.spawnTunnelParticle(intensity);
+                    }
+                }
+                
+                // Update tunnel particles with constant speed and subtle audio reactivity
+                for (let i = this.tunnelParticles.length - 1; i >= 0; i--) {
+                    const particle = this.tunnelParticles[i];
+                    
+                    // Move particle toward camera at TRULY constant speed
+                    particle.z -= particle.speed * deltaTime;
+                    
+                    // Subtle RMS-based size scaling (not affecting movement)
+                    particle.size = particle.baseSize * (0.9 + smoothedFeatures.rms * 0.4); // 0.9x to 1.3x
+                    
+                    // Spectral centroid affects color transition - gold to white
+                    const whiteness = smoothedFeatures.centroid * 0.9;
+                    particle.color.r = 255;
+                    particle.color.g = Math.floor(215 + (255 - 215) * whiteness);
+                    particle.color.b = Math.floor(50 + (255 - 50) * whiteness);
+                    
+                    // Remove particles that have passed the camera
+                    if (particle.z <= 0) {
+                        this.tunnelParticles.splice(i, 1);
+                        continue;
+                    }
+                    
+                    particle.age += deltaTime;
+                    
+                    // Remove old particles
+                    if (particle.age > particle.lifetime) {
+                        this.tunnelParticles.splice(i, 1);
+                    }
+                }
+            }
+            
+            updateRastHealingPulse(deltaTime, smoothedFeatures, onsetDetected) {
+                const currentTime = Date.now();
+                
+                // Update orb scale based on RMS
+                const orbScale = 1 + smoothedFeatures.rms * 12;
+                this.rastOrb.style.transform = `translate(-50%, -50%) scale(${orbScale})`;
+                
+                // Create wave particles based on RMS
+                if (smoothedFeatures.rms > 0.2 && currentTime - this.lastRastWaveTime > this.rastWaveInterval) {
+                    this.createRastWaveParticle();
+                    this.lastRastWaveTime = currentTime;
+                }
+                
+                // Update background color - dark red with slight modulation
+                const redHue = 0 + (smoothedFeatures.centroid * 10); // 0-10 range
+                const redSaturation = 80 + (smoothedFeatures.centroid * 20); // 80-100%
+                const redLightness = 8 + (smoothedFeatures.centroid * 7); // 8-15%, keeping it dark
+                
+                document.body.style.backgroundColor = `hsl(${redHue}, ${redSaturation}%, ${redLightness}%)`;
+            }
+            
+            createRastWaveParticle() {
+                const particle = document.createElement('div');
+                particle.className = 'rast-wave-particle';
+                particle.style.left = '50%';
+                particle.style.top = '50%';
+                document.body.appendChild(particle);
+                
+                particle.addEventListener('animationend', () => {
+                    particle.remove();
+                });
+            }
+            
+            createRastEmber() {
+                const ember = document.createElement('div');
+                ember.className = 'rast-ember';
+                
+                // Random starting position across the width of the screen
+                const startX = Math.random() * window.innerWidth;
+                ember.style.left = `${startX}px`;
+                ember.style.top = '0px';
+                
+                // Create variable size/depth effect
+                const size = 20 + Math.random() * 60;
+                ember.style.width = `${size}px`;
+                ember.style.height = `${size * 0.866}px`; // Height adjustment for hexagon proportions
+                
+                // Create random rotation and drift
+                const rotation = Math.random() * 360;
+                const driftX = Math.random() * 200 - 100; // Random drift left or right
+                
+                // Create depth effect with scale and blur
+                const scale = 0.4 + Math.random() * 1.2;
+                const blur = Math.random() * 2;
+                
+                // Randomize animation speeds for more natural movement
+                const flickerSpeed = 0.2 + Math.random() * 0.4; // Between 0.2s and 0.6s
+                const rippleSpeed = 1 + Math.random() * 1.5; // Between 1s and 2.5s
+                
+                // Set custom properties for the animation
+                ember.style.setProperty('--rotation', `${rotation}deg`);
+                ember.style.setProperty('--drift-x', `${driftX}px`);
+                ember.style.setProperty('--scale', scale);
+                ember.style.setProperty('--blur', `${blur}px`);
+                
+                // Random opacity with higher base value
+                const baseOpacity = 0.4 + Math.random() * 0.6;
+                ember.style.setProperty('--base-opacity', baseOpacity);
+                ember.style.opacity = baseOpacity;
+                
+                // Random color variations - keeping more in the red spectrum
+                const hue = 0 + Math.random() * 30; // Red to orange-red
+                const saturation = 80 + Math.random() * 20;
+                const lightness = 40 + Math.random() * 25;
+                ember.style.background = `radial-gradient(circle, 
+                    hsl(${hue}, ${saturation}%, ${lightness + 15}%) 0%, 
+                    hsl(${hue}, ${saturation}%, ${lightness}%) 50%, 
+                    hsl(${hue}, ${saturation}%, ${lightness - 15}%) 100%)`;
+                
+                // Custom animation duration
+                ember.style.animationDuration = `${4 + Math.random()}s, ${flickerSpeed}s, ${rippleSpeed}s`;
+                
+                // Add to document
+                document.body.appendChild(ember);
+                
+                ember.addEventListener('animationend', (e) => {
+                    if (e.animationName === 'rast-fall') {
+                        ember.remove();
+                    }
+                });
+            }
+
+            render2DRastTunnel() {
+                // Deep midnight indigo background with slight fade for tunnel effect
+                this.ctx2D.fillStyle = 'rgba(25, 15, 80, 0.08)';
+                this.ctx2D.fillRect(0, 0, this.canvas2D.width, this.canvas2D.height);
+                
+                const centerX = this.canvas2D.width / 2;
+                const centerY = this.canvas2D.height / 2;
+                
+                // Sort particles by z-depth (far to near) for proper layering
+                this.tunnelParticles.sort((a, b) => b.z - a.z);
+                
+                // Subtle RMS-based overall glow intensity
+                const globalGlow = 0.8 + (this.smoothedRMS || 0) * 0.4; // 0.8 to 1.2 intensity
+                
+                // Draw tunnel particles with perspective
+                this.tunnelParticles.forEach(particle => {
+                    // Calculate perspective scaling
+                    const scale = 200 / particle.z;
+                    const screenX = centerX + particle.x * scale;
+                    const screenY = centerY + particle.y * scale;
+                    const screenSize = particle.size * scale; // Uses the RMS-adjusted size
+                    
+                    // Skip if particle is off-screen
+                    if (screenX < -50 || screenX > this.canvas2D.width + 50 || 
+                        screenY < -50 || screenY > this.canvas2D.height + 50) {
+                        return;
+                    }
+                    
+                    const lifeProgress = particle.age / particle.lifetime;
+                    const fadeAlpha = lifeProgress < 0.8 ? 1.0 : 1.0 - ((lifeProgress - 0.8) / 0.2);
+                    const depthAlpha = Math.min(1.0, particle.z / 150);
+                    
+                    // Golden glow effect with subtle RMS enhancement
+                    const glowGradient = this.ctx2D.createRadialGradient(
+                        screenX, screenY, 0,
+                        screenX, screenY, screenSize * 2.5
+                    );
+                    glowGradient.addColorStop(0, `rgba(${particle.color.r}, ${particle.color.g}, ${particle.color.b}, ${fadeAlpha * depthAlpha * globalGlow * 0.9})`);
+                    glowGradient.addColorStop(1, `rgba(${particle.color.r}, ${particle.color.g}, ${particle.color.b}, 0)`);
+                    
+                    this.ctx2D.fillStyle = glowGradient;
+                    this.ctx2D.beginPath();
+                    this.ctx2D.arc(screenX, screenY, screenSize * 2.5, 0, Math.PI * 2);
+                    this.ctx2D.fill();
+                    
+                    // Core particle
+                    this.ctx2D.fillStyle = `rgba(${particle.color.r}, ${particle.color.g}, ${particle.color.b}, ${fadeAlpha * depthAlpha})`;
+                    this.ctx2D.beginPath();
+                    this.ctx2D.arc(screenX, screenY, screenSize, 0, Math.PI * 2);
+                    this.ctx2D.fill();
+                });
+            }
+            
+            render2DRastMandala(smoothedFeatures) {
+                const centerX = this.rastCanvas.width / 2;
+                const centerY = this.rastCanvas.height / 2;
+                const time = Date.now();
+                const radius = 260;
+                const layers = 6;
+                
+                this.rastCtx.clearRect(0, 0, this.rastCanvas.width, this.rastCanvas.height);
+                
+                // Mandala pattern
+                this.rastCtx.save();
+                this.rastCtx.translate(centerX, centerY);
+                
+                // Tunnel vision: scale modulated by time and audio
+                let tunnelScale = 1 + 0.25 * Math.sin(time / 400) + smoothedFeatures.rms * 0.7;
+                this.rastCtx.scale(tunnelScale, tunnelScale);
+                
+                let baseR = radius * (1 + smoothedFeatures.rms * 0.5);
+                let n = 48 + Math.floor(smoothedFeatures.centroid * 24); // More points for smoother curves
+                
+                for (let l = 1; l <= layers; l++) {
+                    this.rastCtx.save();
+                    this.rastCtx.rotate((smoothedFeatures.rms * 2 + l * 0.1 + time / 2000) * Math.PI * smoothedFeatures.centroid);
+                    this.rastCtx.beginPath();
+                    
+                    for (let i = 0; i <= n; i++) {
+                        let angle = (i / n) * 2 * Math.PI;
+                        // Reduced jagged effect - much smoother circles
+                        let r = baseR * (l / layers) * (1 + 0.05 * Math.sin(i * 0.5 + smoothedFeatures.rms * 3 + time / 1000));
+                        let x = Math.cos(angle) * r;
+                        let y = Math.sin(angle) * r;
+                        if (i === 0) this.rastCtx.moveTo(x, y);
+                        else this.rastCtx.lineTo(x, y);
+                    }
+                    
+                    this.rastCtx.closePath();
+                    this.rastCtx.strokeStyle = `rgba(255, 80, 40, ${0.18 + 0.10 * l})`;
+                    this.rastCtx.lineWidth = 2.5 + l * 0.7;
+                    this.rastCtx.shadowColor = 'rgba(255, 80, 40, 0.85)';
+                    this.rastCtx.shadowBlur = 32 + l * 8;
+                    this.rastCtx.stroke();
+                    this.rastCtx.restore();
+                }
+                
+                this.rastCtx.restore();
+            }
+            
+            spawnHorizontalLine(yPosition, intensity = 1.0) {
+                const line = {
+                    y: yPosition,
+                    x: -50, // Start off-screen left
+                    width: window.innerWidth + 100, // Full width plus buffer
+                    baseThickness: 2 + Math.random() * 4,
+                    thickness: 2 + Math.random() * 4,
+                    age: 0,
+                    lifetime: 4 + Math.random() * 3,
+                    color: { r: 139, g: 69, b: 42 }, // Start with terracotta
+                    baseSpeed: 50 + Math.random() * 100, // Base speed for RMS scaling
+                    speed: 50 + Math.random() * 100, // Will be updated by RMS
+                    direction: Math.random() > 0.5 ? 1 : -1, // Left or right movement
+                    waveOffset: Math.random() * Math.PI * 2,
+                    wobbleIntensity: intensity * (0.8 + Math.random() * 0.4), // Onset-driven wobble strength
+                    wobbleDecay: 0.95, // How quickly wobble fades
+                    currentWobble: 0 // Current wobble amount
+                };
+                
+                this.horizontalLines.push(line);
+                console.log(`━ Spawned horizontal line at y=${yPosition.toFixed(0)}, thickness=${line.baseThickness.toFixed(1)}, wobble=${line.wobbleIntensity.toFixed(2)}`);
+            }
+            
+            spawnVerticalLine(xPosition, intensity = 1.0) {
+                const line = {
+                    x: xPosition,
+                    y: -50, // Start off-screen top
+                    height: window.innerHeight + 100, // Full height plus buffer
+                    baseThickness: 2 + Math.random() * 4,
+                    thickness: 2 + Math.random() * 4,
+                    age: 0,
+                    lifetime: 4 + Math.random() * 3,
+                    color: { r: 139, g: 69, b: 42 }, // Start with terracotta
+                    baseSpeed: 50 + Math.random() * 100, // Base speed for RMS scaling
+                    speed: 50 + Math.random() * 100, // Will be updated by RMS
+                    direction: Math.random() > 0.5 ? 1 : -1, // Up or down movement
+                    waveOffset: Math.random() * Math.PI * 2,
+                    wobbleIntensity: intensity * (0.8 + Math.random() * 0.4), // Onset-driven wobble strength
+                    wobbleDecay: 0.95, // How quickly wobble fades
+                    currentWobble: 0 // Current wobble amount
+                };
+                
+                this.verticalLines.push(line);
+                console.log(`┃ Spawned vertical line at x=${xPosition.toFixed(0)}, thickness=${line.baseThickness.toFixed(1)}, wobble=${line.wobbleIntensity.toFixed(2)}`);
+            }
+            
+            updateHorizontalLines(deltaTime, smoothedFeatures, onsetDetected) {
+                // Spawn lines on onset events
+                if (onsetDetected) {
+                    const spawnCount = 3 + Math.floor(smoothedFeatures.rms * 5); // 3-8 lines per onset
+                    
+                    // Limit total active lines
+                    const activeLineCount = this.horizontalLines.length + this.verticalLines.length;
+                    const actualSpawnCount = Math.min(spawnCount, Math.max(0, 35 - activeLineCount));
+                    
+                    for (let i = 0; i < actualSpawnCount; i++) {
+                        // Randomly choose horizontal or vertical
+                        if (Math.random() > 0.5) {
+                            // Spawn horizontal line
+                            const yPosition = (Math.random() * 0.8 + 0.1) * window.innerHeight; // 10-90% of screen height
+                            const intensity = 0.8 + smoothedFeatures.rms * 0.7;
+                            this.spawnHorizontalLine(yPosition, intensity);
+                        } else {
+                            // Spawn vertical line
+                            const xPosition = (Math.random() * 0.8 + 0.1) * window.innerWidth; // 10-90% of screen width
+                            const intensity = 0.8 + smoothedFeatures.rms * 0.7;
+                            this.spawnVerticalLine(xPosition, intensity);
+                        }
+                    }
+                    console.log(`━┃ Irak onset! Spawning ${actualSpawnCount} horizontal/vertical lines`);
+                }
+                
+                // Update existing horizontal lines
+                for (let i = this.horizontalLines.length - 1; i >= 0; i--) {
+                    const line = this.horizontalLines[i];
+                    
+                    // RMS controls movement speed - lines move faster with volume
+                    line.speed = line.baseSpeed * (0.3 + smoothedFeatures.rms * 1.4); // 0.3x to 1.7x speed scaling
+                    
+                    // Move line horizontally with RMS-controlled speed
+                    line.x += line.speed * line.direction * deltaTime;
+                    
+                    // RMS controls thickness - lines get thicker with volume
+                    line.thickness = line.baseThickness * (0.5 + smoothedFeatures.rms * 4.5); // 0.5x to 5x scaling
+                    
+                    // Spectral centroid controls color - terracotta to teal transition (more dramatic)
+                    const terracottaColor = { r: 139, g: 69, b: 42 }; // Deep terracotta
+                    const tealColor = { r: 72, g: 118, b: 118 }; // Cool teal
+                    
+                    const blendFactor = Math.min(smoothedFeatures.centroid * 2.0, 1.0); // More dramatic color change
+                    line.color.r = Math.floor(terracottaColor.r + (tealColor.r - terracottaColor.r) * blendFactor);
+                    line.color.g = Math.floor(terracottaColor.g + (tealColor.g - terracottaColor.g) * blendFactor);
+                    line.color.b = Math.floor(terracottaColor.b + (tealColor.b - terracottaColor.b) * blendFactor);
+                    
+                    // Onset-driven wobble that decays over time
+                    if (onsetDetected) {
+                        // Reset wobble on new onset for this line's wave offset timing
+                        const timingSensitivity = Math.sin(Date.now() * 0.01 + line.waveOffset);
+                        if (timingSensitivity > 0.3) { // Only some lines wobble on each onset
+                            line.currentWobble = line.wobbleIntensity;
+                        }
+                    }
+                    
+                    // Apply wobble motion that decays over time
+                    if (line.currentWobble > 0.01) {
+                        const wobbleMotion = Math.sin(Date.now() * 0.008 + line.waveOffset) * line.currentWobble * 80;
+                        line.y += wobbleMotion * deltaTime;
+                        line.currentWobble *= line.wobbleDecay; // Decay wobble over time
+                    }
+                    
+                    line.age += deltaTime;
+                    
+                    // Remove lines that are off-screen or too old
+                    if ((line.direction > 0 && line.x > window.innerWidth + 50) ||
+                        (line.direction < 0 && line.x + line.width < -50) ||
+                        line.age > line.lifetime) {
+                        this.horizontalLines.splice(i, 1);
+                    }
+                }
+                
+                // Update existing vertical lines
+                for (let i = this.verticalLines.length - 1; i >= 0; i--) {
+                    const line = this.verticalLines[i];
+                    
+                    // RMS controls movement speed - lines move faster with volume
+                    line.speed = line.baseSpeed * (0.3 + smoothedFeatures.rms * 1.4); // 0.3x to 1.7x speed scaling
+                    
+                    // Move line vertically with RMS-controlled speed
+                    line.y += line.speed * line.direction * deltaTime;
+                    
+                    // RMS controls thickness - lines get thicker with volume
+                    line.thickness = line.baseThickness * (0.5 + smoothedFeatures.rms * 4.5); // 0.5x to 5x scaling
+                    
+                    // Spectral centroid controls color - terracotta to teal transition (more dramatic)
+                    const terracottaColor = { r: 139, g: 69, b: 42 }; // Deep terracotta
+                    const tealColor = { r: 72, g: 118, b: 118 }; // Cool teal
+                    
+                    const blendFactor = Math.min(smoothedFeatures.centroid * 2.0, 1.0); // More dramatic color change
+                    line.color.r = Math.floor(terracottaColor.r + (tealColor.r - terracottaColor.r) * blendFactor);
+                    line.color.g = Math.floor(terracottaColor.g + (tealColor.g - terracottaColor.g) * blendFactor);
+                    line.color.b = Math.floor(terracottaColor.b + (tealColor.b - terracottaColor.b) * blendFactor);
+                    
+                    // Onset-driven wobble that decays over time
+                    if (onsetDetected) {
+                        // Reset wobble on new onset for this line's wave offset timing
+                        const timingSensitivity = Math.sin(Date.now() * 0.01 + line.waveOffset);
+                        if (timingSensitivity > 0.3) { // Only some lines wobble on each onset
+                            line.currentWobble = line.wobbleIntensity;
+                        }
+                    }
+                    
+                    // Apply wobble motion that decays over time (horizontal wobble for vertical lines)
+                    if (line.currentWobble > 0.01) {
+                        const wobbleMotion = Math.sin(Date.now() * 0.008 + line.waveOffset) * line.currentWobble * 80;
+                        line.x += wobbleMotion * deltaTime;
+                        line.currentWobble *= line.wobbleDecay; // Decay wobble over time
+                    }
+                    
+                    line.age += deltaTime;
+                    
+                    // Remove lines that are off-screen or too old
+                    if ((line.direction > 0 && line.y > window.innerHeight + 50) ||
+                        (line.direction < 0 && line.y + line.height < -50) ||
+                        line.age > line.lifetime) {
+                        this.verticalLines.splice(i, 1);
+                    }
+                }
+            }
+            
+            render2DHorizontalLines() {
+                // Recreate earth-to-sky gradient background with slight fade
+                const gradient = this.ctx2D.createLinearGradient(0, this.canvas2D.height, 0, 0);
+                gradient.addColorStop(0, 'rgba(139, 69, 42, 0.03)'); // Subtle terracotta fade
+                gradient.addColorStop(1, 'rgba(72, 118, 118, 0.03)'); // Subtle teal fade
+                this.ctx2D.fillStyle = gradient;
+                this.ctx2D.fillRect(0, 0, this.canvas2D.width, this.canvas2D.height);
+                
+                // Draw all horizontal lines
+                this.horizontalLines.forEach(line => {
+                    const lifeProgress = line.age / line.lifetime;
+                    const fadeAlpha = lifeProgress < 0.7 ? 1.0 : 1.0 - ((lifeProgress - 0.7) / 0.3);
+                    
+                    // Draw line with glow effect
+                    const glowGradient = this.ctx2D.createLinearGradient(
+                        line.x, line.y - line.thickness * 2,
+                        line.x, line.y + line.thickness * 2
+                    );
+                    glowGradient.addColorStop(0, `rgba(${line.color.r}, ${line.color.g}, ${line.color.b}, 0)`);
+                    glowGradient.addColorStop(0.5, `rgba(${line.color.r}, ${line.color.g}, ${line.color.b}, ${fadeAlpha * 0.6})`);
+                    glowGradient.addColorStop(1, `rgba(${line.color.r}, ${line.color.g}, ${line.color.b}, 0)`);
+                    
+                    // Draw glow
+                    this.ctx2D.fillStyle = glowGradient;
+                    this.ctx2D.fillRect(line.x, line.y - line.thickness * 2, line.width, line.thickness * 4);
+                    
+                    // Draw main line
+                    this.ctx2D.fillStyle = `rgba(${line.color.r}, ${line.color.g}, ${line.color.b}, ${fadeAlpha})`;
+                    this.ctx2D.fillRect(line.x, line.y - line.thickness / 2, line.width, line.thickness);
+                    
+                    // Add highlight for better visibility
+                    this.ctx2D.fillStyle = `rgba(255, 255, 255, ${fadeAlpha * 0.3})`;
+                    this.ctx2D.fillRect(line.x, line.y - line.thickness / 4, line.width, line.thickness / 2);
+                });
+                
+                // Draw all vertical lines
+                this.verticalLines.forEach(line => {
+                    const lifeProgress = line.age / line.lifetime;
+                    const fadeAlpha = lifeProgress < 0.7 ? 1.0 : 1.0 - ((lifeProgress - 0.7) / 0.3);
+                    
+                    // Draw line with glow effect
+                    const glowGradient = this.ctx2D.createLinearGradient(
+                        line.x - line.thickness * 2, line.y,
+                        line.x + line.thickness * 2, line.y
+                    );
+                    glowGradient.addColorStop(0, `rgba(${line.color.r}, ${line.color.g}, ${line.color.b}, 0)`);
+                    glowGradient.addColorStop(0.5, `rgba(${line.color.r}, ${line.color.g}, ${line.color.b}, ${fadeAlpha * 0.6})`);
+                    glowGradient.addColorStop(1, `rgba(${line.color.r}, ${line.color.g}, ${line.color.b}, 0)`);
+                    
+                    // Draw glow
+                    this.ctx2D.fillStyle = glowGradient;
+                    this.ctx2D.fillRect(line.x - line.thickness * 2, line.y, line.thickness * 4, line.height);
+                    
+                    // Draw main line
+                    this.ctx2D.fillStyle = `rgba(${line.color.r}, ${line.color.g}, ${line.color.b}, ${fadeAlpha})`;
+                    this.ctx2D.fillRect(line.x - line.thickness / 2, line.y, line.thickness, line.height);
+                    
+                    // Add highlight for better visibility
+                    this.ctx2D.fillStyle = `rgba(255, 255, 255, ${fadeAlpha * 0.3})`;
+                    this.ctx2D.fillRect(line.x - line.thickness / 4, line.y, line.thickness / 2, line.height);
+                });
+            }
+
+            initializeCurrentMakamDisplay() {
+                // Ensure the initial makam display is properly set up
+                console.log(`🎯 Initializing display for current makam: ${this.currentMakam}`);
+                
+                // Force the proper display setup by calling switchMakam for the current makam
+                if (this.currentMakam === 'rast') {
+                    // Set up Rast system immediately
+                    this.canvas2D.style.display = 'block';
+                    document.getElementById('canvas-container').style.display = 'none';
+                    this.rastCanvas.style.display = 'block';
+                    this.rastOrb.style.display = 'block';
+                    document.body.style.background = '#220000'; // Dark red background
+                    this.setup2DCanvas();
+                } else if (this.currentMakam === 'ussak' || this.currentMakam === 'irak') {
+                    // Set up other 2D systems
+                    this.canvas2D.style.display = 'block';
+                    document.getElementById('canvas-container').style.display = 'none';
+                    this.rastCanvas.style.display = 'none';
+                    this.rastOrb.style.display = 'none';
+                    this.setup2DCanvas();
+                } else {
+                    // Set up 3D system for Neva
+                    this.canvas2D.style.display = 'none';
+                    this.rastCanvas.style.display = 'none';
+                    this.rastOrb.style.display = 'none';
+                    document.getElementById('canvas-container').style.display = 'block';
+                }
+                
+                console.log(`✅ ${this.currentMakam} display initialized`);
+            }
+        }
+
+        // Initialize the visualizer when the page loads
+        window.addEventListener('load', () => {
+            console.log('🚀 Page loaded, starting fire visualizer...');
+            try {
+                new MakamVisualizer();
+            } catch (error) {
+                console.error('❌ Failed to initialize visualizer:', error);
+                document.getElementById('loading').textContent = 'Error loading visualizer';
+            }
+        });
+    </script>
+</body>
+</html> 
