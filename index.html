@@ -570,7 +570,7 @@
                 
                 // Load corresponding audio features with correct naming
                 const featuresFile = `${this.currentMakam}_audio_features.json`;
-                console.log(`🎵 Loading audio features for ${preset.name}: ${featuresFile}`);
+                console.log(`Loading audio features for ${preset.name}: ${featuresFile}`);
                 this.loadAudioFeatures(featuresFile);
             }
             
@@ -587,7 +587,7 @@
                     this.featuresLoaded = true;
                     
                     const preset = this.makamPresets[this.currentMakam];
-                    console.log(`✅ ${preset.name} audio features loaded:`, {
+                    console.log(`${preset.name} audio features loaded:`, {
                         makam: this.currentMakam,
                         duration: this.audioFeatures.duration,
                         rmsFrames: this.audioFeatures.rms.values.length,
@@ -605,7 +605,7 @@
                     const onsetRate = (this.audioFeatures.onsets.length / this.audioFeatures.duration).toFixed(2);
                     this.updateStatus(`${preset.name} ready! ${this.audioFeatures.onsets.length} onsets (${onsetRate}/sec)`);
                 } catch (error) {
-                    console.error('❌ Error loading audio features:', error);
+                    console.error('Error loading audio features:', error);
                     const preset = this.makamPresets[this.currentMakam];
                     this.updateStatus(`Error loading ${preset.name} features - using demo mode`);
                     // Continue without features for demo
@@ -624,7 +624,7 @@
             }
 
             createMakamParticleSystem() {
-                console.log(`🔥 Creating ${this.currentMakam} particle system...`);
+                console.log(`Creating ${this.currentMakam} particle system...`);
                 
                 const preset = this.makamPresets[this.currentMakam];
                 const particleCount = preset.particleCount + (preset.flareCount || 0);
@@ -861,7 +861,7 @@
                 this.particles = new THREE.Points(geometry, material);
                 this.scene.add(this.particles);
                 
-                console.log(`✅ ${preset.name} particle system created with ${particleCount} particles`);
+                console.log(`${preset.name} particle system created with ${particleCount} particles`);
             }
             
             initializeRingParticle(positions, i3, index, totalRingParticles, ringCount) {
@@ -976,7 +976,7 @@
 
             init() {
                 try {
-                    console.log('🎬 Setting up Three.js scene...');
+                    console.log('Setting up Three.js scene...');
                     
                     // Scene setup
                     this.scene = new THREE.Scene();
@@ -987,7 +987,7 @@
                     
                     const canvasContainer = document.getElementById('canvas-container');
                     canvasContainer.appendChild(this.renderer.domElement);
-                    console.log('✅ Renderer added to DOM');
+                    console.log('Renderer added to DOM');
 
                     // Camera position
                     this.camera.position.z = 50;
@@ -1003,7 +1003,7 @@
                     pointLight.position.set(0, 0, 30);
                     this.scene.add(pointLight);
 
-                    console.log('✅ Scene setup complete');
+                    console.log('Scene setup complete');
                     
                     // Hide loading message
                     document.getElementById('loading').style.display = 'none';
@@ -1016,13 +1016,13 @@
                     window.addEventListener('resize', () => this.onWindowResize());
                     
                 } catch (error) {
-                    console.error('❌ Error initializing Three.js:', error);
+                    console.error('Error initializing Three.js:', error);
                     this.updateStatus('Error initializing 3D graphics');
                 }
             }
 
             createFireParticleSystem() {
-                console.log('🔥 Creating fire particle system...');
+                console.log('Creating fire particle system...');
                 
                 const particleCount = 300;
                 const geometry = new THREE.BufferGeometry();
@@ -1167,7 +1167,7 @@
                 this.particles = new THREE.Points(geometry, material);
                 this.scene.add(this.particles);
                 
-                console.log('✅ Fire particle system created with', particleCount, 'particles');
+                console.log('Fire particle system created with', particleCount, 'particles');
             }
 
             smoothAudioFeatures(rmsValue, centroidValue) {
@@ -1362,7 +1362,7 @@
                     if (preset.geometry === 'sun_mandala') {
                         // Spawn sun-flares on onsets for Rast
                         spawnCount = 3 + Math.floor(smoothedFeatures.rms * 8); // 3-11 flares per onset
-                        console.log(`🌟 ${preset.name} onset! Spawning ${spawnCount} sun-flares`);
+                        console.log(`${preset.name} onset! Spawning ${spawnCount} sun-flares`);
                     } else if (preset.geometry === 'kiting_stars') {
                         // Spawn flares on onsets for Ussak
                         spawnCount = 2 + Math.floor(smoothedFeatures.rms * 4); // 2-6 flares per onset
@@ -1370,7 +1370,7 @@
                     } else {
                         // Other makams
                         spawnCount = 8 + Math.floor(smoothedFeatures.rms * 15);
-                        console.log(`🎵 ${preset.name} onset! Spawning ${spawnCount} particles`);
+                        console.log(`${preset.name} onset! Spawning ${spawnCount} particles`);
                     }
                 }
                 
@@ -1451,7 +1451,7 @@
                 });
                 
                 this.audio.addEventListener('loadeddata', () => {
-                    console.log('✅ Audio loaded and ready');
+                    console.log('Audio loaded and ready');
                 });
             }
 
@@ -1517,7 +1517,7 @@
                             // No smoothing for 2D makams - immediate response
                             if (onsetDetected) {
                                 this.lastOnsetTime = currentTime;
-                                console.log(`🎵 ${this.currentMakam} onset detected at ${currentTime.toFixed(2)}s, nearby onsets: ${nearbyOnsets.length}`);
+                                console.log(`${this.currentMakam} onset detected at ${currentTime.toFixed(2)}s, nearby onsets: ${nearbyOnsets.length}`);
                             }
                         }
                     }
@@ -1746,7 +1746,7 @@
                     document.body.style.background = '#220000'; // Dark red background
                 }
                 
-                console.log(`✅ 2D Canvas setup for ${this.currentMakam} system`);
+                console.log(`2D Canvas setup for ${this.currentMakam} system`);
             }
 
             spawnPaintingBlob(intensity = 1.0, rmsValue = 0.5) {
@@ -1771,7 +1771,7 @@
                 };
                 
                 this.paintingBlobs.push(blob);
-                console.log(`🎨 Spawned blob: baseSize=${blob.baseSize.toFixed(1)}, RMS-size=${blob.size.toFixed(1)}, speed=${Math.abs(blob.vx).toFixed(1)}, lifetime=${blob.lifetime.toFixed(1)}s`);
+                console.log(`Spawned blob: baseSize=${blob.baseSize.toFixed(1)}, RMS-size=${blob.size.toFixed(1)}, speed=${Math.abs(blob.vx).toFixed(1)}, lifetime=${blob.lifetime.toFixed(1)}s`);
             }
             
             updatePaintingBlobs(deltaTime, smoothedFeatures, onsetDetected) {
@@ -1787,7 +1787,7 @@
                         const intensity = 0.8 + smoothedFeatures.rms * 0.7;
                         this.spawnPaintingBlob(intensity, smoothedFeatures.rms);
                     }
-                    console.log(`🎨 Ussak onset! RMS: ${smoothedFeatures.rms.toFixed(3)}, Centroid: ${smoothedFeatures.centroid.toFixed(3)}, Active: ${activeBlobCount}, Spawning: ${actualSpawnCount}`);
+                    console.log(`Ussak onset! RMS: ${smoothedFeatures.rms.toFixed(3)}, Centroid: ${smoothedFeatures.centroid.toFixed(3)}, Active: ${activeBlobCount}, Spawning: ${actualSpawnCount}`);
                 }
                 
                 // Update existing blobs with optimized calculations
@@ -1897,7 +1897,7 @@
                 };
                 
                 this.triangleParticles.push(triangle);
-                console.log(`🔺 Spawned triangle: baseSize=${triangle.baseSize.toFixed(1)}, pos=(${triangle.x.toFixed(0)},${triangle.y.toFixed(0)}), lifetime=${triangle.lifetime.toFixed(1)}s`);
+                console.log(`Spawned triangle: baseSize=${triangle.baseSize.toFixed(1)}, pos=(${triangle.x.toFixed(0)},${triangle.y.toFixed(0)}), lifetime=${triangle.lifetime.toFixed(1)}s`);
             }
             
             updateTriangleParticles(deltaTime, smoothedFeatures, onsetDetected) {
@@ -1944,10 +1944,10 @@
                             };
                             this.triangleParticles.push(triangle);
                         }
-                        console.log(`💥 Psychedelic burst! Spawned ${burstCount} triangles in circular pattern`);
+                        console.log(`Psychedelic burst! Spawned ${burstCount} triangles in circular pattern`);
                     }
                     
-                    console.log(`🔺 Irak onset! RMS: ${smoothedFeatures.rms.toFixed(3)}, Centroid: ${smoothedFeatures.centroid.toFixed(3)}, Active: ${activeTriangleCount}, Spawning: ${actualSpawnCount}`);
+                    console.log(`Irak onset! RMS: ${smoothedFeatures.rms.toFixed(3)}, Centroid: ${smoothedFeatures.centroid.toFixed(3)}, Active: ${activeTriangleCount}, Spawning: ${actualSpawnCount}`);
                 }
                 
                 // Update existing triangles
@@ -2064,7 +2064,7 @@
                 };
                 
                 this.sunParticles.push(particle);
-                console.log(`☀️ Spawned sun particle at distance ${distance.toFixed(0)} pixels`);
+                console.log(`Spawned sun particle at distance ${distance.toFixed(0)} pixels`);
             }
             
             updateRastSun(deltaTime, smoothedFeatures, onsetDetected) {
@@ -2090,7 +2090,7 @@
                         const intensity = 0.8 + smoothedFeatures.rms * 0.7;
                         this.spawnSunParticle(intensity, angleOffset);
                     }
-                    console.log(`☀️ Rast onset! Spawning ${actualSpawnCount} sun particles around central sun`);
+                    console.log(`Rast onset! Spawning ${actualSpawnCount} sun particles around central sun`);
                 }
                 
                 // Update surrounding particles
@@ -2662,7 +2662,7 @@
 
             initializeCurrentMakamDisplay() {
                 // Ensure the initial makam display is properly set up
-                console.log(`🎯 Initializing display for current makam: ${this.currentMakam}`);
+                console.log(`Initializing display for current makam: ${this.currentMakam}`);
                 
                 // Force the proper display setup by calling switchMakam for the current makam
                 if (this.currentMakam === 'rast') {
@@ -2688,17 +2688,17 @@
                     document.getElementById('canvas-container').style.display = 'block';
                 }
                 
-                console.log(`✅ ${this.currentMakam} display initialized`);
+                console.log(`${this.currentMakam} display initialized`);
             }
         }
 
         // Initialize the visualizer when the page loads
         window.addEventListener('load', () => {
-            console.log('🚀 Page loaded, starting fire visualizer...');
+            console.log('Page loaded, starting fire visualizer...');
             try {
                 new MakamVisualizer();
             } catch (error) {
-                console.error('❌ Failed to initialize visualizer:', error);
+                console.error('Failed to initialize visualizer:', error);
                 document.getElementById('loading').textContent = 'Error loading visualizer';
             }
         });
