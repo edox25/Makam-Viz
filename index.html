@@ -1,3 +1,4 @@
+// contains demos/unused code, not cleaned up
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -470,7 +471,7 @@
                 this.horizontalLines = [];
                 this.verticalLines = [];
                 
-                // Rast healing pulse system
+                // Rast pulse system
                 this.rastCanvas = document.getElementById('rast-mandala-canvas');
                 this.rastCtx = this.rastCanvas.getContext('2d');
                 this.rastOrb = document.querySelector('.rast-orb');
@@ -636,7 +637,7 @@
                 const ages = new Float32Array(particleCount);
                 const particleTypes = new Float32Array(particleCount); // 0=ring, 1=flare
 
-                // Initialize particles based on makam geometry
+                // Initialize particles
                 for (let i = 0; i < particleCount; i++) {
                     const i3 = i * 3;
                     
@@ -687,7 +688,7 @@
                 geometry.setAttribute('age', new THREE.BufferAttribute(ages, 1));
                 geometry.setAttribute('particleType', new THREE.BufferAttribute(particleTypes, 1));
 
-                // Rast sun-mandala specific shader material
+                // 
                 const material = new THREE.ShaderMaterial({
                     uniforms: {
                         time: { value: 0 },
@@ -992,7 +993,7 @@
                     // Camera position
                     this.camera.position.z = 50;
 
-                    // Create makam-specific particle system
+                    // Create particle system
                     this.createMakamParticleSystem();
 
                     // Soft ambient lighting for therapeutic feel
@@ -1041,7 +1042,7 @@
                     positions[i3 + 1] = 0;
                     positions[i3 + 2] = 0;
 
-                    // Bright saturated base colors - no black/dark colors
+                    // Bright saturated base color
                     colors[i3] = 1.0;     // R
                     colors[i3 + 1] = 0.5; // G
                     colors[i3 + 2] = 0.2; // B
@@ -1086,18 +1087,18 @@
                             float colorIntensity = rmsValue * 0.7 + centroidValue * 0.3;
                             
                             if (colorIntensity < 0.25) {
-                                // Deep red for quiet/low passages
+                                
                                 vColor = vec3(1.0, 0.1, 0.0);
                             } else if (colorIntensity < 0.5) {
-                                // Red to orange transition
+                                
                                 float t = (colorIntensity - 0.25) / 0.25;
                                 vColor = mix(vec3(1.0, 0.1, 0.0), vec3(1.0, 0.5, 0.0), t);
                             } else if (colorIntensity < 0.75) {
-                                // Orange to yellow transition
+                                
                                 float t = (colorIntensity - 0.5) / 0.25;
                                 vColor = mix(vec3(1.0, 0.5, 0.0), vec3(1.0, 1.0, 0.0), t);
                             } else {
-                                // Yellow to white for intense passages
+                                
                                 float t = (colorIntensity - 0.75) / 0.25;
                                 vColor = mix(vec3(1.0, 1.0, 0.0), vec3(1.0, 1.0, 1.0), t);
                             }
@@ -1167,7 +1168,7 @@
                 this.particles = new THREE.Points(geometry, material);
                 this.scene.add(this.particles);
                 
-                console.log('Fire particle system created with', particleCount, 'particles');
+                console.log('particle system created with', particleCount, 'particles');
             }
 
             smoothAudioFeatures(rmsValue, centroidValue) {
@@ -1245,7 +1246,7 @@
                         lifetimes[index] = 3.0 + Math.random() * 2.0; // Shorter for rising and popping
                     }
                 } else {
-                    // Other makam geometries
+                    // Other geometries
                     this.initializeParticlePosition(positions, i3, preset.geometry, index, preset.particleCount);
                     sizes[index] = (2 + Math.random() * 4) * intensity * preset.scaleMultiplier;
                     lifetimes[index] = 3.0 + Math.random() * 4.0;
@@ -1269,7 +1270,7 @@
                 
                 let needsUpdate = false;
                 
-                // Update existing particles with makam-specific movement
+                // Update existing particles with specific movement
                 for (let i = 0; i < ages.length; i++) {
                     if (ages[i] < lifetimes[i]) {
                         ages[i] += deltaTime;
@@ -1285,11 +1286,11 @@
                                     positions[i3 + 1] += vel.vy * deltaTime;
                                     positions[i3 + 2] += vel.vz * deltaTime;
                                     
-                                    // Add gravity/falling effect
+                                
                                     vel.vy -= 9.8 * deltaTime * 0.5; // Gentle gravity
                                 }
                             }
-                            // Ring particles stay in their mandala positions (handled by shader breathing)
+                            
                         } else {
                             // Other makam movement patterns
                             switch (preset.motionStyle) {
@@ -1838,7 +1839,7 @@
                 this.ctx2D.fillStyle = 'rgba(30, 40, 80, 0.03)'; // Reduced fade for performance
                 this.ctx2D.fillRect(0, 0, this.canvas2D.width, this.canvas2D.height);
                 
-                // Draw all blobs and their trails with optimized rendering
+                // Draw all blobs and their trails 
                 this.paintingBlobs.forEach(blob => {
                     // Simplified trail rendering for performance
                     blob.trail.forEach((point, index) => {
@@ -1901,14 +1902,14 @@
             }
             
             updateTriangleParticles(deltaTime, smoothedFeatures, onsetDetected) {
-                // Enhanced psychedelic onset sensitivity for Irak
+                
                 if (onsetDetected) {
-                    // More sensitive spawning - more particles but smaller base sizes
+                   
                     const baseSpawnCount = 6 + Math.floor(smoothedFeatures.rms * 8); // 6-14 triangles per onset
                     const psychedelicBonus = Math.floor(smoothedFeatures.centroid * 4); // Up to 4 extra for high frequencies
                     const spawnCount = Math.min(baseSpawnCount + psychedelicBonus, 18); // Cap at 18 for performance
                     
-                    // Limit total active triangles to max 30 at once for psychedelic density
+                  
                     const activeTriangleCount = this.triangleParticles.length;
                     const actualSpawnCount = Math.min(spawnCount, Math.max(0, 30 - activeTriangleCount));
                     
@@ -1917,7 +1918,7 @@
                         this.spawnTriangleParticle(intensity, smoothedFeatures.rms);
                     }
                     
-                    // Psychedelic burst effect - create circular spawn pattern for dramatic onsets
+                   
                     if (smoothedFeatures.rms > 0.7 && smoothedFeatures.centroid > 0.6) {
                         const burstCount = Math.min(8, 35 - this.triangleParticles.length);
                         const centerX = window.innerWidth / 2;
@@ -1950,43 +1951,43 @@
                     console.log(`Irak onset! RMS: ${smoothedFeatures.rms.toFixed(3)}, Centroid: ${smoothedFeatures.centroid.toFixed(3)}, Active: ${activeTriangleCount}, Spawning: ${actualSpawnCount}`);
                 }
                 
-                // Update existing triangles
+               
                 for (let i = this.triangleParticles.length - 1; i >= 0; i--) {
                     const triangle = this.triangleParticles[i];
                     
-                    // Psychedelic pulsing effect based on audio
+                    
                     const timePulse = Math.sin(Date.now() * 0.01 + triangle.x * 0.01) * 0.3;
                     const audioPulse = smoothedFeatures.rms * 0.4;
                     
-                    // Onset affects speed - particles accelerate on onsets
+                    // Onset affects speed 
                     if (onsetDetected) {
                         const speedBoost = 1.3 + smoothedFeatures.rms * 1.5; // Reduced for performance
                         triangle.vx *= speedBoost;
                         triangle.vy *= speedBoost;
                     }
                     
-                    // Update position with psychedelic drift
+                   
                     triangle.x += triangle.vx * deltaTime * 60;
                     triangle.y += triangle.vy * deltaTime * 60;
                     
-                    // Psychedelic rotation based on position and audio
+                  
                     triangle.rotation += triangle.rotationSpeed + timePulse + audioPulse;
                     
-                    // RMS controls size with psychedelic pulsing - keep reasonable for performance
+                    // RMS controls size with  pulsing 
                     triangle.size = triangle.baseSize * (0.4 + smoothedFeatures.rms * 1.2 + timePulse * 0.3); // 0.4x to 1.9x scaling
                     
-                    // Spectral centroid controls glow intensity with psychedelic enhancement
+                    
                     triangle.glowIntensity = 0.4 + smoothedFeatures.centroid * 1.4 + Math.abs(timePulse); // Enhanced glow
                     
                     triangle.age += deltaTime;
                     
-                    // Wrap around screen edges
+                    /
                     if (triangle.x < -50) triangle.x = window.innerWidth + 50;
                     if (triangle.x > window.innerWidth + 50) triangle.x = -50;
                     if (triangle.y < -50) triangle.y = window.innerHeight + 50;
                     if (triangle.y > window.innerHeight + 50) triangle.y = -50;
                     
-                    // Remove triangles that are too old
+                   
                     if (triangle.age > triangle.lifetime) {
                         this.triangleParticles.splice(i, 1);
                     }
@@ -1994,14 +1995,14 @@
             }
 
             render2DTriangles() {
-                // Recreate earth-to-sky gradient background with slight fade
+               
                 const gradient = this.ctx2D.createLinearGradient(0, this.canvas2D.height, 0, 0);
                 gradient.addColorStop(0, 'rgba(139, 69, 42, 0.02)'); // Subtle terracotta fade
                 gradient.addColorStop(1, 'rgba(72, 118, 118, 0.02)'); // Subtle teal fade
                 this.ctx2D.fillStyle = gradient;
                 this.ctx2D.fillRect(0, 0, this.canvas2D.width, this.canvas2D.height);
                 
-                // Draw all spinning triangles
+              
                 this.triangleParticles.forEach(triangle => {
                     const lifeProgress = triangle.age / triangle.lifetime;
                     const fadeAlpha = lifeProgress < 0.7 ? 1.0 : 1.0 - ((lifeProgress - 0.7) / 0.3);
@@ -2010,7 +2011,7 @@
                     this.ctx2D.translate(triangle.x, triangle.y);
                     this.ctx2D.rotate(triangle.rotation);
                     
-                    // Draw glow effect first (controlled by spectral centroid)
+                  
                     const glowSize = triangle.size * (1.5 + triangle.glowIntensity * 0.8);
                     const glowGradient = this.ctx2D.createRadialGradient(0, 0, 0, 0, 0, glowSize);
                     glowGradient.addColorStop(0, `rgba(255, 255, 255, ${fadeAlpha * triangle.glowIntensity * 0.3})`);
@@ -2022,11 +2023,11 @@
                     this.ctx2D.arc(0, 0, glowSize, 0, Math.PI * 2);
                     this.ctx2D.fill();
                     
-                    // Draw main black triangle
+                   
                     this.ctx2D.fillStyle = `rgba(0, 0, 0, ${fadeAlpha})`;
                     this.ctx2D.beginPath();
                     
-                    // Triangle vertices (pointing up) - size controlled by RMS
+                   
                     const size = triangle.size;
                     this.ctx2D.moveTo(0, -size); // Top point
                     this.ctx2D.lineTo(-size * 0.866, size * 0.5); // Bottom left
@@ -2068,10 +2069,10 @@
             }
             
             updateRastSun(deltaTime, smoothedFeatures, onsetDetected) {
-                // Update central sun
+              
                 this.sun.size = this.sun.baseSize * (0.8 + smoothedFeatures.rms * 1.0); // RMS controls size
                 
-                // Spectral centroid makes sun whiter
+              
                 const whiteness = smoothedFeatures.centroid * 0.8;
                 this.sun.color.r = 255;
                 this.sun.color.g = Math.floor(215 + (255 - 215) * whiteness);
@@ -2081,7 +2082,7 @@
                 if (onsetDetected) {
                     const spawnCount = 5 + Math.floor(smoothedFeatures.rms * 2); // 5-7 particles per onset
                     
-                    // Limit total particles for performance
+                   
                     const activeParticleCount = this.sunParticles.length;
                     const actualSpawnCount = Math.min(spawnCount, Math.max(0, 40 - activeParticleCount));
                     
@@ -2164,7 +2165,7 @@
                 this.ctx2D.arc(this.sun.x, this.sun.y, this.sun.size, 0, Math.PI * 2);
                 this.ctx2D.fill();
                 
-                // Add bright center highlight
+            
                 this.ctx2D.fillStyle = `rgba(255, 255, 255, 0.6)`;
                 this.ctx2D.beginPath();
                 this.ctx2D.arc(this.sun.x, this.sun.y, this.sun.size * 0.4, 0, Math.PI * 2);
@@ -2173,15 +2174,15 @@
 
             spawnTunnelParticle(intensity = 1.0) {
                 const particle = {
-                    x: (Math.random() - 0.5) * 300, // Slightly narrower spawn area for better tunnel effect
+                    x: (Math.random() - 0.5) * 300, // Slightly narrower spawn area 
                     y: (Math.random() - 0.5) * 300,
-                    z: 180 + Math.random() * 40, // Consistent depth range
+                    z: 180 + Math.random() * 40,
                     baseSize: (3 + Math.random() * 5) * intensity, // Base size for audio reactivity
                     size: (3 + Math.random() * 5) * intensity,
                     age: 0,
-                    lifetime: 5 + Math.random() * 3, // Longer lifetime for smoother tunnel
+                    lifetime: 5 + Math.random() * 3, // Longer lifetime
                     color: { r: 255, g: 215, b: 50 }, // Warm sunrise gold
-                    speed: 45 + Math.random() * 15 // Truly constant speed range 45-60
+                    speed: 45 + Math.random() * 15 
                 };
                 
                 this.tunnelParticles.push(particle);
@@ -2195,7 +2196,7 @@
                 if (onsetDetected) {
                     const spawnCount = 4 + Math.floor(smoothedFeatures.rms * 4); // 4-8 particles per onset
                     
-                    // Limit total particles for performance
+                   
                     const activeParticleCount = this.tunnelParticles.length;
                     const actualSpawnCount = Math.min(spawnCount, Math.max(0, 50 - activeParticleCount));
                     
@@ -2209,13 +2210,13 @@
                 for (let i = this.tunnelParticles.length - 1; i >= 0; i--) {
                     const particle = this.tunnelParticles[i];
                     
-                    // Move particle toward camera at TRULY constant speed
+                
                     particle.z -= particle.speed * deltaTime;
                     
-                    // Subtle RMS-based size scaling (not affecting movement)
+               
                     particle.size = particle.baseSize * (0.9 + smoothedFeatures.rms * 0.4); // 0.9x to 1.3x
                     
-                    // Spectral centroid affects color transition - gold to white
+              
                     const whiteness = smoothedFeatures.centroid * 0.9;
                     particle.color.r = 255;
                     particle.color.g = Math.floor(215 + (255 - 215) * whiteness);
@@ -2249,10 +2250,10 @@
                     this.lastRastWaveTime = currentTime;
                 }
                 
-                // Update background color - dark red with slight modulation
-                const redHue = 0 + (smoothedFeatures.centroid * 10); // 0-10 range
-                const redSaturation = 80 + (smoothedFeatures.centroid * 20); // 80-100%
-                const redLightness = 8 + (smoothedFeatures.centroid * 7); // 8-15%, keeping it dark
+                // Update background color
+                const redHue = 0 + (smoothedFeatures.centroid * 10);
+                const redSaturation = 80 + (smoothedFeatures.centroid * 20); 
+                const redLightness = 8 + (smoothedFeatures.centroid * 7); 
                 
                 document.body.style.backgroundColor = `hsl(${redHue}, ${redSaturation}%, ${redLightness}%)`;
             }
@@ -2281,7 +2282,7 @@
                 // Create variable size/depth effect
                 const size = 20 + Math.random() * 60;
                 ember.style.width = `${size}px`;
-                ember.style.height = `${size * 0.866}px`; // Height adjustment for hexagon proportions
+                ember.style.height = `${size * 0.866}px`; 
                 
                 // Create random rotation and drift
                 const rotation = Math.random() * 360;
@@ -2292,10 +2293,10 @@
                 const blur = Math.random() * 2;
                 
                 // Randomize animation speeds for more natural movement
-                const flickerSpeed = 0.2 + Math.random() * 0.4; // Between 0.2s and 0.6s
-                const rippleSpeed = 1 + Math.random() * 1.5; // Between 1s and 2.5s
+                const flickerSpeed = 0.2 + Math.random() * 0.4; 
+                const rippleSpeed = 1 + Math.random() * 1.5; 
                 
-                // Set custom properties for the animation
+                // custom properties for the animation
                 ember.style.setProperty('--rotation', `${rotation}deg`);
                 ember.style.setProperty('--drift-x', `${driftX}px`);
                 ember.style.setProperty('--scale', scale);
@@ -2306,7 +2307,7 @@
                 ember.style.setProperty('--base-opacity', baseOpacity);
                 ember.style.opacity = baseOpacity;
                 
-                // Random color variations - keeping more in the red spectrum
+                // Random color variations
                 const hue = 0 + Math.random() * 30; // Red to orange-red
                 const saturation = 80 + Math.random() * 20;
                 const lightness = 40 + Math.random() * 25;
@@ -2344,11 +2345,11 @@
                 
                 // Draw tunnel particles with perspective
                 this.tunnelParticles.forEach(particle => {
-                    // Calculate perspective scaling
+                    
                     const scale = 200 / particle.z;
                     const screenX = centerX + particle.x * scale;
                     const screenY = centerY + particle.y * scale;
-                    const screenSize = particle.size * scale; // Uses the RMS-adjusted size
+                    const screenSize = particle.size * scale; 
                     
                     // Skip if particle is off-screen
                     if (screenX < -50 || screenX > this.canvas2D.width + 50 || 
@@ -2399,7 +2400,7 @@
                 this.rastCtx.scale(tunnelScale, tunnelScale);
                 
                 let baseR = radius * (1 + smoothedFeatures.rms * 0.5);
-                let n = 48 + Math.floor(smoothedFeatures.centroid * 24); // More points for smoother curves
+                let n = 48 + Math.floor(smoothedFeatures.centroid * 24); 
                 
                 for (let l = 1; l <= layers; l++) {
                     this.rastCtx.save();
@@ -2408,7 +2409,7 @@
                     
                     for (let i = 0; i <= n; i++) {
                         let angle = (i / n) * 2 * Math.PI;
-                        // Reduced jagged effect - much smoother circles
+                       
                         let r = baseR * (l / layers) * (1 + 0.05 * Math.sin(i * 0.5 + smoothedFeatures.rms * 3 + time / 1000));
                         let x = Math.cos(angle) * r;
                         let y = Math.sin(angle) * r;
@@ -2487,12 +2488,12 @@
                         // Randomly choose horizontal or vertical
                         if (Math.random() > 0.5) {
                             // Spawn horizontal line
-                            const yPosition = (Math.random() * 0.8 + 0.1) * window.innerHeight; // 10-90% of screen height
+                            const yPosition = (Math.random() * 0.8 + 0.1) * window.innerHeight; 
                             const intensity = 0.8 + smoothedFeatures.rms * 0.7;
                             this.spawnHorizontalLine(yPosition, intensity);
                         } else {
                             // Spawn vertical line
-                            const xPosition = (Math.random() * 0.8 + 0.1) * window.innerWidth; // 10-90% of screen width
+                            const xPosition = (Math.random() * 0.8 + 0.1) * window.innerWidth;
                             const intensity = 0.8 + smoothedFeatures.rms * 0.7;
                             this.spawnVerticalLine(xPosition, intensity);
                         }
@@ -2513,7 +2514,7 @@
                     // RMS controls thickness - lines get thicker with volume
                     line.thickness = line.baseThickness * (0.5 + smoothedFeatures.rms * 4.5); // 0.5x to 5x scaling
                     
-                    // Spectral centroid controls color - terracotta to teal transition (more dramatic)
+                    // Spectral centroid controls color
                     const terracottaColor = { r: 139, g: 69, b: 42 }; // Deep terracotta
                     const tealColor = { r: 72, g: 118, b: 118 }; // Cool teal
                     
@@ -2552,16 +2553,16 @@
                 for (let i = this.verticalLines.length - 1; i >= 0; i--) {
                     const line = this.verticalLines[i];
                     
-                    // RMS controls movement speed - lines move faster with volume
+                   
                     line.speed = line.baseSpeed * (0.3 + smoothedFeatures.rms * 1.4); // 0.3x to 1.7x speed scaling
                     
-                    // Move line vertically with RMS-controlled speed
+                    /
                     line.y += line.speed * line.direction * deltaTime;
                     
-                    // RMS controls thickness - lines get thicker with volume
+                  
                     line.thickness = line.baseThickness * (0.5 + smoothedFeatures.rms * 4.5); // 0.5x to 5x scaling
                     
-                    // Spectral centroid controls color - terracotta to teal transition (more dramatic)
+                    
                     const terracottaColor = { r: 139, g: 69, b: 42 }; // Deep terracotta
                     const tealColor = { r: 72, g: 118, b: 118 }; // Cool teal
                     
@@ -2570,16 +2571,16 @@
                     line.color.g = Math.floor(terracottaColor.g + (tealColor.g - terracottaColor.g) * blendFactor);
                     line.color.b = Math.floor(terracottaColor.b + (tealColor.b - terracottaColor.b) * blendFactor);
                     
-                    // Onset-driven wobble that decays over time
+                 
                     if (onsetDetected) {
-                        // Reset wobble on new onset for this line's wave offset timing
+                     
                         const timingSensitivity = Math.sin(Date.now() * 0.01 + line.waveOffset);
                         if (timingSensitivity > 0.3) { // Only some lines wobble on each onset
                             line.currentWobble = line.wobbleIntensity;
                         }
                     }
                     
-                    // Apply wobble motion that decays over time (horizontal wobble for vertical lines)
+                   
                     if (line.currentWobble > 0.01) {
                         const wobbleMotion = Math.sin(Date.now() * 0.008 + line.waveOffset) * line.currentWobble * 80;
                         line.x += wobbleMotion * deltaTime;
@@ -2588,7 +2589,7 @@
                     
                     line.age += deltaTime;
                     
-                    // Remove lines that are off-screen or too old
+                    
                     if ((line.direction > 0 && line.y > window.innerHeight + 50) ||
                         (line.direction < 0 && line.y + line.height < -50) ||
                         line.age > line.lifetime) {
@@ -2600,8 +2601,8 @@
             render2DHorizontalLines() {
                 // Recreate earth-to-sky gradient background with slight fade
                 const gradient = this.ctx2D.createLinearGradient(0, this.canvas2D.height, 0, 0);
-                gradient.addColorStop(0, 'rgba(139, 69, 42, 0.03)'); // Subtle terracotta fade
-                gradient.addColorStop(1, 'rgba(72, 118, 118, 0.03)'); // Subtle teal fade
+                gradient.addColorStop(0, 'rgba(139, 69, 42, 0.03)'); 
+                gradient.addColorStop(1, 'rgba(72, 118, 118, 0.03)'); 
                 this.ctx2D.fillStyle = gradient;
                 this.ctx2D.fillRect(0, 0, this.canvas2D.width, this.canvas2D.height);
                 
@@ -2661,7 +2662,7 @@
             }
 
             initializeCurrentMakamDisplay() {
-                // Ensure the initial makam display is properly set up
+                
                 console.log(`Initializing display for current makam: ${this.currentMakam}`);
                 
                 // Force the proper display setup by calling switchMakam for the current makam
